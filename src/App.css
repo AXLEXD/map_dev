@@ -86,18 +86,16 @@
   border-radius: 10%;
   transition: 0.3s;
   border: 2px solid #2c2c2c00;
-  height: 7.8vw;
-  width: 7.8vw;
-  max-width: 20vh;
-  max-height: 20vh;
+  height: 13vmin;
+  width: 13vmin;
   margin: auto;
 }
 .blockbutton:hover, .blockbuttonselected {
   cursor: pointer;
   border: 2px solid white;
   border-radius: 30%;
-  height: 7.8vw;
-  width: 7.8vw;
+  height: 13vmin;
+  width: 13vmin;
   max-width: 20vh;
   max-height: 20vh;
   margin: auto;

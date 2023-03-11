@@ -449,7 +449,7 @@ class MapCanvas extends React.Component {
                 className='map-canvas primary'
                 onContextMenu={(e) => {
                     e.preventDefault();
-                    this.rmousedown=true;
+                    // this.rmousedown=true;
                 }}
                 onMouseDown={(e) => {
                     e.preventDefault();
@@ -457,6 +457,9 @@ class MapCanvas extends React.Component {
                         this.lmousedown=true;
                         plotLine(this.currentcell,this.currentcell,this.celloffset, (x,y)=>this.drawCellAtMouse(x,y));
                         this.updateCanvas();
+                    }
+                    else if (e.button === 2) {
+                        this.rmousedown=true;
                     }
                 }}
                 onMouseUp={(e) => {
