@@ -139,6 +139,9 @@ class Vector2D {
     isEqualTo(othervector) {
         return (this.x===othervector.x && this.y===othervector.y);
     }
+    notEqualTo(othervector) {
+        return (this.x!==othervector.x || this.y!==othervector.y);
+    }
 
     positive() {
         return (this.x >= 0 && this.y >=0);
@@ -147,18 +150,31 @@ class Vector2D {
 
 
 class Map {
-    constructor(w, h) {
+    constructor(w, h, chunksize) {
 
         this.canvasdimensions = new Vector2D(w,h); // establishing at start means no resizing canvas element
+        this.chunksize = chunksize;
         this.matrix = null;
-
-        // this.cachedChunks = [];
 
         this.lastchunkrequesttime = null;
         
 
     }
-    makeMatrix(dimn, start, chunksize, resolveGenerated) {
+
+    getValues(offset, chunkpixels) {
+        let numchunks = new Vector2D(0,0);
+        let startpoint = new Vector2D(0,0);
+
+        startpoint.x = (offset.x === 0) ? 0 : Math.floor((-1*offset.x)/chunkpixels);
+        startpoint.y = (offset.y === 0) ? 0 : Math.floor((-1*offset.y)/chunkpixels);
+
+        numchunks.x = Math.ceil(this.canvasdimensions.x/chunkpixels)+1; // bit cheaty - should probs optimise
+        numchunks.y = Math.ceil(this.canvasdimensions.y/chunkpixels)+1;
+
+        return {startpoint, numchunks};
+    }
+
+    setMatrix(dimn, start) {
 
         let coords = [];
 
@@ -167,78 +183,44 @@ class Map {
             grid[i] = Array(dimn.y);
             for (let j=0;j<dimn.x;j++) {
                 let coordsobj = { x: start.x+i, y: start.y+j };
-                coords.push(coordsobj);
-    
-                //if (!grid[i][j]) grid[i][j] = new Chunk(chunksize, i+startx, j+starty);
+                coords.push(coordsobj);    
             }
         }
-        // console.log(coords);
-        fetch('/getchunks',{
-            method: 'POST',
-            headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
-            body: JSON.stringify(coords)
-        })
-        .then((res) => res.json())
-        .then((express_data) => {
-            let chunklist = express_data;
-            // console.log(chunklist);
-
-            chunklist.forEach(chunkitem => {
-                let coordstring = chunkitem.coord;
-
-                let x = parseInt(coordstring.split(',')[0]);
-                let y = parseInt(coordstring.split(',')[1]);
-                // console.log(x,y);
-                
-                if (chunkitem.chunkdata !== '0') {
-                    grid[x-start.x][y-start.y] = new Chunk(chunksize, x, y, chunkitem.chunkdata);
-                    // console.log(grid[x][y]);
-                }
-            });
-
-            
-            // console.log(`new chunk made ${i},${j}`);
-            // console.log(`${i},${j},${dimn.x},${dimn.y}`);
-            resolveGenerated(start);
-        });
-        return grid;
-    }
-
-    generateChunks(offset, cellsize, scale, chunksize) {
-        let numchunks = new Vector2D(0,0);
-        let startpoint = new Vector2D(0,0);
 
         let map_grid = this;
-
+        // console.log(coords);
         return new Promise(function(resolve, reject) {
-            // console.log(`${cellsize},${scale},${chunksize}`)
+            fetch('/getchunks',{
+                method: 'POST',
+                headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+                body: JSON.stringify(coords)
+            })
+            .then((res) => res.json())
+            .then((chunkstore) => {
 
-            let chunkpixels = chunksize*cellsize*scale; // number of pixels in chunk width
-            
-            startpoint.x = Math.floor((-1*offset.x)/chunkpixels);
-            startpoint.y = Math.floor((-1*offset.y)/chunkpixels);
+                for (let i=0;i<dimn.x;i++) {
+                    for (let j=0;j<dimn.y;j++) {
+                        let currentchunk = chunkstore[`${i+start.x},${j+start.y}`];
+                        if (currentchunk !== undefined) {
+                            grid[i][j] = new Chunk(map_grid.chunksize, i+start.x, j+start.y, currentchunk.chunkdata.split(''));
+                        }
+                        else grid[i][j] = new Chunk(map_grid.chunksize, i+start.x, j+start.y);
+                    }
+                }
+                // chunklist.forEach(chunkitem => {
+                    // if (chunkitem.chunkdata !== '0') {
+                        // let coord = chunkitem.coord.split(',');
+                        // let x = parseInt(coord[0]);
+                        // let y = parseInt(coord[1]);
 
-            numchunks.x = Math.ceil(map_grid.canvasdimensions.x/chunkpixels)+1; // bit cheaty - should probs optimise
-            numchunks.y = Math.ceil(map_grid.canvasdimensions.y/chunkpixels)+1;
-
-            // console.log(`startpoint: (${startpoint.x},${startpoint.y})`);
-            // console.log(`dimensions: (${numchunks.x},${numchunks.y})`);
-            // if (this.matrix) {
-            //     for (let i=0;i<this.matrix.length;i++) {
-            //         for (let k=0;k<this.matrix[i].length;k++) {
-            //             let current = this.matrix[i][k];
-
-            //             let in_array = false;
-            //             this.cachedChunks.forEach((element) => {
-            //                 if (element.x===current.x && element.y===current.y) in_array = true;
-            //             })
-            //             if (current.modified && !in_array) this.cachedChunks.push(current);
-            //         }
-            //     }
-            // }
-            map_grid.matrix = map_grid.makeMatrix(numchunks, startpoint, chunksize, resolve);
+                        // grid[x-start.x][y-start.y] = new Chunk(map_grid.chunksize, x, y, chunkitem.chunkdata.split(''));
+                        // console.log(grid[x][y]);
+                    // }
+                // });
+                map_grid.matrix = grid;
+                resolve();
+            });
         });
-
     }
 
     getChunkPosOffset(currentcell, chunksize, startpoint) {
@@ -255,14 +237,14 @@ class Map {
 
 class Chunk {
     constructor (chunksize, x, y, chunkcells=[]) {
-        //this.matrix = this.makeMatrix(chunksize, chunksize);
         this.x = x;
         this.y = y;
         
+        // this.modified_cells = [];
         if (chunkcells.length) {
             this.modified_cells = chunkcells;
         } else {
-            this.modified_cells = `0`.repeat(chunksize*chunksize);
+            this.modified_cells = Array(chunksize*chunksize).fill('0');
         }
         
     }
@@ -338,6 +320,8 @@ class MapCanvas extends React.Component {
 
         this.changeUpdateTime = props.changeUpdateTime;
 
+        this.lastUpdateTime = 0;
+
         this.cellsize = 8;
         this.scale = 2;
         this.chunksize = 16;
@@ -349,6 +333,7 @@ class MapCanvas extends React.Component {
         this.celloffset = new Vector2D(0,0);
         this.currentcell = new Vector2D(0,0);
         this.startpoint = new Vector2D(0,0);
+        this.numchunks = new Vector2D(0,0);
 
         this.cursorcurrent = new Vector2D(0,0);
         this.lmousedown = false;
@@ -364,9 +349,11 @@ class MapCanvas extends React.Component {
 
         // this.resizeCanvas(this.canvas);
         const { width, height } = this.canvas.getBoundingClientRect();
-        this.map_grid = new Map(width, height);
+        this.map_grid = new Map(width, height, this.chunksize);
 
-        this.updateCanvas();
+        this.interval = setInterval(() => this.updateCanvas(true), 1000);
+
+        // this.updateCanvas(true);
     }
 
     getCursorPosition(event, canvas) {
@@ -395,10 +382,12 @@ class MapCanvas extends React.Component {
     // maybe should be in the map class
     drawMap (canvas, startpoint) {
 
+        this.resizeCanvas(canvas);
         const ctx = canvas.getContext('2d');
-        // ctx.clearRect(0, 0, canvas.width, canvas.height)
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
         // ctx.fillStyle = "#fff7d8";
-        // ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         let cellapparentsize = this.cellsize*this.scale;
 
@@ -416,7 +405,7 @@ class MapCanvas extends React.Component {
 
             ctx.fillRect(x, y, cellapparentsize, cellapparentsize);
         }
-
+        if (this.map_grid.matrix === null) return;
         // for map
         for (let i=0;i<this.map_grid.matrix.length;i++) {
             for (let j=0;j<this.map_grid.matrix[i].length;j++) {
@@ -428,7 +417,7 @@ class MapCanvas extends React.Component {
                     if (typeof this.map_grid.matrix[i][j] === 'undefined') continue;
                     blockid = this.map_grid.matrix[i][j].modified_cells[c];
 
-                    if (blockid!==0){
+                    if (blockid!=="0"){
                         ctx.fillStyle = blocks[blockid].imagesrc; // placeholder until get images
                         doFill(i,j,k,l,blockid);
                     }
@@ -439,25 +428,32 @@ class MapCanvas extends React.Component {
         doFill(cell_i,cell_j,cell_k,cell_l);
     }
 
-    updateCanvas() {
+    updateCanvas(force=false) {
         let start = Date.now(); // time testing
 
-        this.resizeCanvas(this.canvas);
-        const ctx = this.canvas.getContext('2d');
-        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
-        ctx.fillStyle = "#fff7d8";
-        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        if (Date.now() >= this.lastUpdateTime+1000) {
+            // console.log(Date.now());
+            this.lastUpdateTime = Date.now();
+            let {startpoint, numchunks} = this.map_grid.getValues(this.mapoffset, this.chunksize*this.cellsize*this.scale);
+            // console.log(startpoint, this.startpoint);
+            if (startpoint.notEqualTo(this.startpoint) || numchunks.notEqualTo(this.numchunks) || this.map_grid.matrix === null || force) {
+                console.log("querying for new chunks...");
+                this.map_grid.setMatrix(numchunks, startpoint, this.scale, this.chunksize)
+                .then(()=>{
+                    if (this.map_grid.matrix !== null) this.drawMap(this.canvas, startpoint);
+                    this.startpoint = startpoint;
+                    this.numchunks = numchunks;
 
-        
-        this.map_grid.generateChunks(this.mapoffset, this.cellsize, this.scale, this.chunksize)
-        .then((startpoint)=>{
-            this.startpoint = startpoint;
-            this.drawMap(this.canvas, startpoint);
-
-            // console.log(this.map_grid.matrix);
-            let delta = Date.now()-start;
-            this.changeUpdateTime(delta);
-        });
+                    // console.log(this.map_grid.matrix);
+                    let delta = Date.now()-start;
+                    this.changeUpdateTime(delta);
+                });
+            } else {
+                this.drawMap(this.canvas, startpoint);
+            }
+        } else {
+            this.drawMap(this.canvas, this.startpoint);
+        }
         
         // requestAnimationFrame(() => {this.drawMap(this.canvas, startpoint);});
     }
@@ -480,7 +476,10 @@ class MapCanvas extends React.Component {
 
     drawCellAtMouse(x,y) {
         const currentpos = new Vector2D(x-this.celloffset.x,y-this.celloffset.y);
+        console.log(`Initial coords: x:${currentpos.x} y:${currentpos.y}`);
+
         let {cell_i, cell_j, cell_k, cell_l} = this.map_grid.getChunkPosOffset(currentpos, this.chunksize, this.startpoint);
+        console.log(`Insertion coords: x:${cell_i} y:${cell_j}`);
         this.map_grid.matrix[cell_i][cell_j].addCell(cell_k, cell_l, this.getBlockSelected());
         // console.log(`cell drawn at chunk ${cell_i},${cell_j}`);
     }
@@ -497,13 +496,29 @@ class MapCanvas extends React.Component {
         if (!this.currentcell.isEqualTo(newcurrentcell)) {
             if (this.lmousedown) {
 
-                plotLine(this.currentcell, newcurrentcell, this.celloffset, (x,y)=>this.drawCellAtMouse(x,y));
+                // plotLine(this.currentcell, newcurrentcell, this.celloffset, (x,y)=>this.drawCellAtMouse(x,y));
+                this.drawLine(this.currentcell,newcurrentcell);
             }
             this.currentcell = newcurrentcell;
             update = true;
         }
         
         return update;
+    }
+
+    drawLine(p1,p2) {
+        plotLine(p1, p2, this.celloffset, (x,y)=>this.drawCellAtMouse(x,y));
+
+        fetch('/drawline',{
+            method: 'POST',
+            headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+            body: JSON.stringify({p1:p1,p2:p2,offset:this.celloffset, chunksize:this.chunksize, blockid:this.getBlockSelected(), startpoint:this.startpoint})
+        })
+        .then((res) => res.json())
+        .then((result) => {
+            console.log(`drew line with result ${result.message}`)
+            this.updateCanvas();
+        });
     }
 
     render() {
@@ -520,7 +535,7 @@ class MapCanvas extends React.Component {
                     e.preventDefault();
                     if (e.button === 0) {
                         this.lmousedown=true;
-                        plotLine(this.currentcell,this.currentcell,this.celloffset, (x,y)=>this.drawCellAtMouse(x,y));
+                        this.drawLine(this.currentcell,this.currentcell);
                         this.updateCanvas();
                     }
                     else if (e.button === 2) {
@@ -537,7 +552,7 @@ class MapCanvas extends React.Component {
 
                     update = this.moveCursor(e);
 
-                    // if (update) this.updateCanvas();
+                    if (update) this.updateCanvas();
                 }}
                 onMouseLeave={(e) => {
                     // console.log("left canvas");

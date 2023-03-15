@@ -20,7 +20,6 @@ app.get("/api", (req, res) => {
 });
 
 app.post("/getchunks", (req, res) => {
-  let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress
   let coordslist = req.body;
   console.log(`recieved: ${JSON.stringify(coordslist)}`);
   // console.log(`recieving request for chunk ${data.x}, ${data.y}`);
@@ -32,13 +31,14 @@ app.post("/getchunks", (req, res) => {
 });
 
 app.post("/drawline", (req, res) => {
-  // var ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress
+  var ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress
   console.log(`hello`);
-  let data = req.body;
-  console.log(`recieved: ${JSON.stringify(data)}`);
-  
-  let response = JSON.stringify([10,4]);
-  res.json(response);
+  let line = req.body;
+  console.log(`recieved: ${JSON.stringify(line)}`);
+
+  serve.writeLine(line, ip).then((result) => {
+    res.json({message:"hello"});
+  });
 });
 
 // All other GET requests not handled before will return our React app
