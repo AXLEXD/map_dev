@@ -174,7 +174,7 @@ class Map {
         return {startpoint, numchunks};
     }
 
-    setMatrix(dimn, start) {
+    setMatrix(dimn, start, lines) {
 
         let coords = [];
 
@@ -193,10 +193,11 @@ class Map {
             fetch('/getchunks',{
                 method: 'POST',
                 headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
-                body: JSON.stringify(coords)
+                body: JSON.stringify({coords:coords, lines:lines})
             })
             .then((res) => res.json())
             .then((chunkstore) => {
+                // console.log(chunkstore);
 
                 for (let i=0;i<dimn.x;i++) {
                     for (let j=0;j<dimn.y;j++) {
@@ -207,16 +208,6 @@ class Map {
                         else grid[i][j] = new Chunk(map_grid.chunksize, i+start.x, j+start.y);
                     }
                 }
-                // chunklist.forEach(chunkitem => {
-                    // if (chunkitem.chunkdata !== '0') {
-                        // let coord = chunkitem.coord.split(',');
-                        // let x = parseInt(coord[0]);
-                        // let y = parseInt(coord[1]);
-
-                        // grid[x-start.x][y-start.y] = new Chunk(map_grid.chunksize, x, y, chunkitem.chunkdata.split(''));
-                        // console.log(grid[x][y]);
-                    // }
-                // });
                 map_grid.matrix = grid;
                 resolve();
             });
@@ -320,7 +311,10 @@ class MapCanvas extends React.Component {
 
         this.changeUpdateTime = props.changeUpdateTime;
 
-        this.lastUpdateTime = 0;
+        this.lastChunkFetchTime = 0;
+        this.lastDrawSendTime = 0;
+
+        this.drawLines = [];
 
         this.cellsize = 8;
         this.scale = 2;
@@ -351,7 +345,8 @@ class MapCanvas extends React.Component {
         const { width, height } = this.canvas.getBoundingClientRect();
         this.map_grid = new Map(width, height, this.chunksize);
 
-        this.interval = setInterval(() => this.updateCanvas(true), 1000);
+        this.chunkinterval = setInterval(() => this.updateCanvas(true), 1000);
+        // setTimeout(()=>{this.drawinterval = setInterval(() => this.sendDraws(), 1000)}, 500);
 
         // this.updateCanvas(true);
     }
@@ -428,25 +423,46 @@ class MapCanvas extends React.Component {
         doFill(cell_i,cell_j,cell_k,cell_l);
     }
 
+
+    // sendDraws() {
+    //     let start = Date.now(); // time testing
+
+
+    //     if (this.drawLines.length > 0) {
+    //         let linestosend = this.drawLines;
+    //         this.drawLines = [];
+    //         fetch('/senddraws',{
+    //             method: 'POST',
+    //             headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+    //             body: JSON.stringify(linestosend)
+    //         })
+    //         .then((result) => {
+    //             console.log(`Draw query ${result.ok}, RTT: ${Date.now()-start}ms`);
+    //         });
+    //     }
+
+    // }
+
     updateCanvas(force=false) {
         let start = Date.now(); // time testing
 
-        if (Date.now() >= this.lastUpdateTime+1000) {
+        if (Date.now() >= this.lastChunkFetchTime+1000) {
             // console.log(Date.now());
-            this.lastUpdateTime = Date.now();
+            this.lastChunkFetchTime = Date.now();
             let {startpoint, numchunks} = this.map_grid.getValues(this.mapoffset, this.chunksize*this.cellsize*this.scale);
             // console.log(startpoint, this.startpoint);
-            if (startpoint.notEqualTo(this.startpoint) || numchunks.notEqualTo(this.numchunks) || this.map_grid.matrix === null || force) {
-                console.log("querying for new chunks...");
-                this.map_grid.setMatrix(numchunks, startpoint, this.scale, this.chunksize)
+            if (force) {
+                // console.log("querying for new chunks...");
+                let linestosend = this.drawLines;
+                this.drawLines = [];
+                this.map_grid.setMatrix(numchunks, startpoint, linestosend)
                 .then(()=>{
                     if (this.map_grid.matrix !== null) this.drawMap(this.canvas, startpoint);
                     this.startpoint = startpoint;
                     this.numchunks = numchunks;
 
                     // console.log(this.map_grid.matrix);
-                    let delta = Date.now()-start;
-                    this.changeUpdateTime(delta);
+                    this.changeUpdateTime(Date.now()-start);
                 });
             } else {
                 this.drawMap(this.canvas, startpoint);
@@ -476,10 +492,9 @@ class MapCanvas extends React.Component {
 
     drawCellAtMouse(x,y) {
         const currentpos = new Vector2D(x-this.celloffset.x,y-this.celloffset.y);
-        console.log(`Initial coords: x:${currentpos.x} y:${currentpos.y}`);
 
         let {cell_i, cell_j, cell_k, cell_l} = this.map_grid.getChunkPosOffset(currentpos, this.chunksize, this.startpoint);
-        console.log(`Insertion coords: x:${cell_i} y:${cell_j}`);
+        // console.log(`Insertion coords: x:${cell_i} y:${cell_j}`);
         this.map_grid.matrix[cell_i][cell_j].addCell(cell_k, cell_l, this.getBlockSelected());
         // console.log(`cell drawn at chunk ${cell_i},${cell_j}`);
     }
@@ -507,18 +522,10 @@ class MapCanvas extends React.Component {
     }
 
     drawLine(p1,p2) {
+
         plotLine(p1, p2, this.celloffset, (x,y)=>this.drawCellAtMouse(x,y));
 
-        fetch('/drawline',{
-            method: 'POST',
-            headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
-            body: JSON.stringify({p1:p1,p2:p2,offset:this.celloffset, chunksize:this.chunksize, blockid:this.getBlockSelected(), startpoint:this.startpoint})
-        })
-        .then((res) => res.json())
-        .then((result) => {
-            console.log(`drew line with result ${result.message}`)
-            this.updateCanvas();
-        });
+        this.drawLines.push({p1:p1,p2:p2,offset:this.celloffset,blockid:this.getBlockSelected()});
     }
 
     render() {
@@ -564,7 +571,7 @@ class MapCanvas extends React.Component {
                 }}
                 onWheel={(e) => {
                     e.preventDefault();
-                    let newscale = this.scale + Math.round(e.deltaY)/100;
+                    let newscale = this.scale - Math.round(e.deltaY)/100;
                     if (newscale>0.5) this.scale = newscale;
                     else this.scale = 0.5;
                     // console.log(this.scale);
