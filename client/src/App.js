@@ -570,13 +570,13 @@ class MapCanvas extends React.Component {
                 onWheel={(e) => {
                     e.preventDefault();
                     let newscale = this.scale - Math.round(e.deltaY)/1000;
-                    let scaleinit = this.scale;
+                    // let scaleinit = this.scale;
                     if (newscale>0.5) {
                         this.scale = newscale;
                         const { width, height } = this.canvas.getBoundingClientRect();
-                        let nwidth = width/2;
-                        let nheight = height/2;
-                        this.moveMap(new Vector2D(0,0),new Vector2D((nwidth-(nwidth*(this.scale-scaleinit))),(nheight-(nheight*(this.scale-scaleinit)))));
+                        // let nwidth = width/2;
+                        // let nheight = height/2;
+                        // this.moveMap(new Vector2D(0,0),new Vector2D((nwidth-(nwidth*(this.scale-scaleinit))),(nheight-(nheight*(this.scale-scaleinit)))));
                     }
                     else this.scale = 0.5;
                     
