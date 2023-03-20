@@ -573,7 +573,7 @@ class MapCanvas extends React.Component {
                     // let scaleinit = this.scale;
                     if (newscale>0.5) {
                         this.scale = newscale;
-                        const { width, height } = this.canvas.getBoundingClientRect();
+                        // const { width, height } = this.canvas.getBoundingClientRect();
                         // let nwidth = width/2;
                         // let nheight = height/2;
                         // this.moveMap(new Vector2D(0,0),new Vector2D((nwidth-(nwidth*(this.scale-scaleinit))),(nheight-(nheight*(this.scale-scaleinit)))));
