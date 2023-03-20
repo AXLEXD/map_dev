@@ -15,11 +15,6 @@ app.use(express.static(path.resolve(__dirname, '../client/build')));
 app.use(bodyParser.json())
 // app.use(bodyParser.urlencoded({ extended: false }))
 
-app.get("/api", (req, res) => {
-  // var ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress
-  res.json({ message: "Hello from server!" });
-});
-
 app.post("/getchunks", (req, res) => {
   var ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress
   let coordslist = req.body.coords;

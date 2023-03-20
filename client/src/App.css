@@ -16,6 +16,22 @@
 
 .App {
   text-align: center;
+  color: #000000;
+  color: #225313;
+  color: #0025f5;
+  color: #eb3223;
+  color: #125bf5;
+  color: #ed612b;
+  color: #ea40f7;
+  color: #4ca630;
+  color: #ec67f7;
+  color: #46aaf8;
+  color: #f4ac3d;
+  color: #f3b0fa;
+  color: #75f94c;
+  color: #72fbfd;
+  color: #fffd54;
+  color: #ffffff;
 }
 
 .App-wrapper {
@@ -86,16 +102,16 @@
   border-radius: 10%;
   transition: 0.3s;
   border: 2px solid #2c2c2c00;
-  height: 13vmin;
-  width: 13vmin;
+  height: 8vmin;
+  width: 8vmin;
   margin: auto;
 }
 .blockbutton:hover, .blockbuttonselected {
   cursor: pointer;
   border: 2px solid white;
   border-radius: 30%;
-  height: 13vmin;
-  width: 13vmin;
+  height: 10vmin;
+  width: 10vmin;
   max-width: 20vh;
   max-height: 20vh;
   margin: auto;

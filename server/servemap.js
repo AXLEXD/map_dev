@@ -16,6 +16,7 @@ const userip_col  = 'userip';
 
 
 const chunksize = 16;
+const cellsize = 8;
 
 
 // function testsql() {
@@ -39,7 +40,7 @@ function readChunk(coordslist, ip) {
             if (err) throw err;
             let result = {};
             rows.forEach(item => {
-                if (parseInt(item.chunkdata) !== 0) {
+                if (item.chunkdata !== "0".repeat(256)) {
                     let chunkdata = item.chunkdata;
                     let coord = item.coord;
                     chunkindex = coord;
@@ -147,6 +148,7 @@ function writeLine(line, userip) {
         } return concatenatedString;
     })();
     const SQLQuery1 = `SELECT * FROM ${tablename} WHERE` + conditions;
+    console.log(SQLQuery1);
 
 
     let getChunksQuery = new Promise(function(resolve, reject) {
@@ -208,7 +210,7 @@ function writeLines(lines, userip) {
 
         let chunkindex = `${cell_i},${cell_j}`;
         if (modchunks[chunkindex] === undefined) {
-            modchunks[chunkindex] = {x:cell_i,y:cell_j,chunkdata:Array(256).fill(0)};
+            modchunks[chunkindex] = {x:cell_i,y:cell_j,chunkdata:Array(256).fill("0")};
         }
         pixels.push({i:cell_i,j:cell_j,k:cell_k,l:cell_l,blockid:blockid});
     }
@@ -240,6 +242,7 @@ function writeLines(lines, userip) {
     })();
     const SQLQuery1 = `SELECT * FROM ${tablename} WHERE` + conditions;
 
+
     // console.log(SQLQuery1);
 
     let getChunksQuery = new Promise(function(resolve, reject) {
@@ -263,7 +266,6 @@ function writeLines(lines, userip) {
                 return concatenatedString;
             })();
             const SQLQuery2 = `REPLACE INTO ${tablename} (${coords_col}, ${userip_col}, ${chunkdata_col}) VALUES ` + values;
-        
 
             resolve(SQLQuery2);
         });

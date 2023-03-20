@@ -2,7 +2,7 @@ import './App.css';
 import React, { createRef } from 'react';
 
 
-const blocks = [
+const blocksold = [
     {
         blockid: 0,
         blockname: '1',
@@ -54,6 +54,91 @@ const blocks = [
         imagesrc: '#f47b79'
     }
 ];
+  
+const blocks = [
+    {
+        blockid: '0',
+        blockname: '1',
+        imagesrc: '#ffffff'
+    },
+    {
+        blockid: '1',
+        blockname: '2',
+        imagesrc: '#d1e7dc'
+    },
+    {
+        blockid: '2',
+        blockname: '3',
+        imagesrc: '#c4d4e1'
+    },
+    {
+        blockid: '3',
+        blockname: '4',
+        imagesrc: '#bcb5d3'
+    },
+    {
+        blockid: '4',
+        blockname: '5',
+        imagesrc: '#f5dbe2'
+    },
+    {
+        blockid: '5',
+        blockname: '6',
+        imagesrc: '#eeb6c9'
+    },
+    {
+        blockid: '6',
+        blockname: '7',
+        imagesrc: '#c49abf'
+    },
+    {
+        blockid: '7',
+        blockname: '8',
+        imagesrc: '#bada55'
+    },
+    {
+        blockid: '8',
+        blockname: '9',
+        imagesrc: '#ffd700'
+    },
+    {
+        blockid: '9',
+        blockname: '10',
+        imagesrc: '#f47b79'
+    },
+    {
+        blockid: 'a',
+        blockname: '11',
+        imagesrc: '#c6e2d4'
+    },
+    {
+        blockid: 'b',
+        blockname: '12',
+        imagesrc: '#b6d3c2'
+    },
+    {
+        blockid: 'c',
+        blockname: '13',
+        imagesrc: '#e0b1cb'
+    },
+    {
+        blockid: 'd',
+        blockname: '14',
+        imagesrc: '#d0a7b7'
+    },
+    {
+        blockid: 'e',
+        blockname: '15',
+        imagesrc: '#f3d1d3'
+    },
+    {
+        blockid: 'f',
+        blockname: '16',
+        imagesrc: '#e9b8c8'
+    }
+];
+
+  
 
 function plotLineLow(x0, y0, x1, y1, drawFunc) {
     let dx = x1 - x0;
@@ -259,14 +344,16 @@ class AppWrapper extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            block_selected: 1, 
+            block_selected: '1', 
             update_time: 0,
             tot_update_time: 0,
             num_updates: 1,
             cursorx: 0,
             cursory: 0,
             offsetx: 0,
-            offsety: 0
+            offsety: 0,
+            chunkx: 0,
+            chunky: 0
         };
 
         this.changeBlock = (blockid) => {this.setState({block_selected: blockid})};
@@ -287,6 +374,9 @@ class AppWrapper extends React.Component {
         this.changeOffsetLoc = (vector) => {
             this.setState({offsetx: vector.x,offsety: vector.y});
         }
+        this.changeChunkLoc = (x,y) => {
+            this.setState({chunkx: x,chunky: y});
+        }
     }
 
     componentDidMount() {
@@ -303,13 +393,14 @@ class AppWrapper extends React.Component {
     render() {
         return (
             <div className='App-wrapper'>
-                <MapCanvas changeUpdateTime={this.changeUpdateTime} getBlockSelected={this.getBlockSelected} changeCursorLoc={this.changeCursorLoc} changeOffsetLoc={this.changeOffsetLoc}/>
+                <MapCanvas changeUpdateTime={this.changeUpdateTime} getBlockSelected={this.getBlockSelected} changeCursorLoc={this.changeCursorLoc} changeOffsetLoc={this.changeOffsetLoc} changeChunkLoc={this.changeChunkLoc}/>
                 <Palette isSelected={this.isSelected} changeBlock={this.changeBlock}/>
                 <div className='drawer primary'>
                 <div style={{position: `absolute`,right:`0.8vw`}}>
                     ({this.state.update_time}ms, avg: {Math.round(this.state.tot_update_time/this.state.num_updates)}ms, {this.state.num_updates} updates)
                     <br/>Cursor: ({this.state.cursorx},{this.state.cursory})
                     <br/>Offset: ({this.state.offsetx},{this.state.offsety})
+                    <br/>Chunk: ({this.state.chunkx},{this.state.chunky})
                 </div>
                 <b>Instructions:</b><br/>This is a pixel art canvas with infinite area. Scroll to zoom in and out, right click to pan around, and use left click to draw on the canvas.
                 <br/>Use the palette on the right to select your colour.
@@ -328,6 +419,7 @@ class MapCanvas extends React.Component {
         this.changeUpdateTime = props.changeUpdateTime;
         this.changeCursorLoc = props.changeCursorLoc;
         this.changeOffsetLoc = props.changeOffsetLoc;
+        this.changeChunkLoc = props.changeChunkLoc;
 
         this.lastChunkFetchTime = 0;
         this.lastDrawSendTime = 0;
@@ -432,13 +524,13 @@ class MapCanvas extends React.Component {
                     blockid = this.map_grid.matrix[i][j].modified_cells[c];
 
                     if (blockid!=="0"){
-                        ctx.fillStyle = blocks[blockid].imagesrc; // placeholder until get images
+                        ctx.fillStyle = blocks[parseInt(blockid, 16)].imagesrc; // placeholder until get images
                         doFill(i,j,k,l,blockid);
                     }
                 }
             }
         }
-        ctx.fillStyle = blocks[this.getBlockSelected()].imagesrc+"8f"; // placeholder until get images
+        ctx.fillStyle = blocks[parseInt(this.getBlockSelected(), 16)].imagesrc+"8f"; // placeholder until get images
         doFill(cell_i,cell_j,cell_k,cell_l);
     }
 
@@ -514,6 +606,9 @@ class MapCanvas extends React.Component {
             this.currentcell = newcurrentcell;
             update = true;
             this.changeCursorLoc(this.currentcell);
+            let {cell_i, cell_j, cell_k, cell_l} = this.map_grid.getChunkPosOffset(this.currentcell, this.chunksize, this.startpoint);
+            this.changeChunkLoc(cell_i+this.startpoint.x,cell_j+this.startpoint.y);
+
         }
         
         return update;
