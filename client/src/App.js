@@ -146,6 +146,13 @@ class Vector2D {
     positive() {
         return (this.x >= 0 && this.y >=0);
     }
+
+    multipliedby(number) {
+        return new Vector2D(this.x*number,this.y*number);
+    }
+    transformedby(x,y) {
+        return new Vector2D(this.x+x,this.y+y);
+    }
 }
 
 
@@ -256,7 +263,10 @@ class AppWrapper extends React.Component {
             update_time: 0,
             tot_update_time: 0,
             num_updates: 1,
-            express_data: null
+            cursorx: 0,
+            cursory: 0,
+            offsetx: 0,
+            offsety: 0
         };
 
         this.changeBlock = (blockid) => {this.setState({block_selected: blockid})};
@@ -270,6 +280,12 @@ class AppWrapper extends React.Component {
                 tot_update_time: this.state.tot_update_time+new_time, 
                 num_updates: this.state.num_updates+1
             });
+        }
+        this.changeCursorLoc = (vector) => {
+            this.setState({cursorx: vector.x,cursory: vector.y});
+        }
+        this.changeOffsetLoc = (vector) => {
+            this.setState({offsetx: vector.x,offsety: vector.y});
         }
     }
 
@@ -287,12 +303,13 @@ class AppWrapper extends React.Component {
     render() {
         return (
             <div className='App-wrapper'>
-                <MapCanvas changeUpdateTime={this.changeUpdateTime} getBlockSelected={this.getBlockSelected}/>
+                <MapCanvas changeUpdateTime={this.changeUpdateTime} getBlockSelected={this.getBlockSelected} changeCursorLoc={this.changeCursorLoc} changeOffsetLoc={this.changeOffsetLoc}/>
                 <Palette isSelected={this.isSelected} changeBlock={this.changeBlock}/>
                 <div className='drawer primary'>
                 <div style={{position: `absolute`,right:`0.8vw`}}>
                     ({this.state.update_time}ms, avg: {Math.round(this.state.tot_update_time/this.state.num_updates)}ms, {this.state.num_updates} updates)
-                    <br/>{`Here is the express message: ${this.state.express_data}`}
+                    <br/>Cursor: ({this.state.cursorx},{this.state.cursory})
+                    <br/>Offset: ({this.state.offsetx},{this.state.offsety})
                 </div>
                 <b>Instructions:</b><br/>This is a pixel art canvas with infinite area. Scroll to zoom in and out, right click to pan around, and use left click to draw on the canvas.
                 <br/>Use the palette on the right to select your colour.
@@ -308,8 +325,9 @@ class MapCanvas extends React.Component {
         super(props);
 
         this.getBlockSelected = props.getBlockSelected;
-
         this.changeUpdateTime = props.changeUpdateTime;
+        this.changeCursorLoc = props.changeCursorLoc;
+        this.changeOffsetLoc = props.changeOffsetLoc;
 
         this.lastChunkFetchTime = 0;
         this.lastDrawSendTime = 0;
@@ -345,7 +363,7 @@ class MapCanvas extends React.Component {
         const { width, height } = this.canvas.getBoundingClientRect();
         this.map_grid = new Map(width, height, this.chunksize);
 
-        this.chunkinterval = setInterval(() => this.updateCanvas(true), 1000);
+        this.chunkinterval = setTimeout(() => this.updateCanvas(true), 1000);
         // setTimeout(()=>{this.drawinterval = setInterval(() => this.sendDraws(), 1000)}, 500);
 
         // this.updateCanvas(true);
@@ -361,17 +379,18 @@ class MapCanvas extends React.Component {
     }
 
     getCurrentCell() {
-        let x = Math.floor((this.cursorcurrent.x-this.mapoffset.x)/(this.cellsize*this.scale));
-        let y = Math.floor((this.cursorcurrent.y-this.mapoffset.y)/(this.cellsize*this.scale));
+        let x = Math.floor((this.cursorcurrent.x-this.mapoffset.x*this.scale)/(this.cellsize*this.scale));
+        let y = Math.floor((this.cursorcurrent.y-this.mapoffset.y*this.scale)/(this.cellsize*this.scale));
         const pos = new Vector2D(x,y);
         return pos;
     }
 
     moveMap(start, end) {
-        let x = (end.x-start.x);
-        let y = (end.y-start.y);
+        let x = (end.x-start.x)/this.scale;
+        let y = (end.y-start.y)/this.scale;
         this.mapoffset.transform(x,y);
-        this.celloffset.setTo(Math.round(this.mapoffset.x),Math.round(this.mapoffset.y));
+        this.celloffset.setTo(Math.floor(this.mapoffset.x/(this.cellsize)),Math.floor(this.mapoffset.y/(this.cellsize)));
+        this.changeOffsetLoc(this.celloffset);
     }
 
     // maybe should be in the map class
@@ -395,8 +414,8 @@ class MapCanvas extends React.Component {
 
         let doFill = (i,j,k,l) => {
 
-            x = ((i+startpoint.x)*this.chunksize+k)*(cellapparentsize)+this.mapoffset.x;
-            y = ((j+startpoint.y)*this.chunksize+l)*(cellapparentsize)+this.mapoffset.y;
+            x = ((i+startpoint.x)*this.chunksize+k)*(cellapparentsize)+this.mapoffset.x*this.scale;
+            y = ((j+startpoint.y)*this.chunksize+l)*(cellapparentsize)+this.mapoffset.y*this.scale;
 
             ctx.fillRect(x, y, cellapparentsize, cellapparentsize);
         }
@@ -423,33 +442,13 @@ class MapCanvas extends React.Component {
         doFill(cell_i,cell_j,cell_k,cell_l);
     }
 
-
-    // sendDraws() {
-    //     let start = Date.now(); // time testing
-
-
-    //     if (this.drawLines.length > 0) {
-    //         let linestosend = this.drawLines;
-    //         this.drawLines = [];
-    //         fetch('/senddraws',{
-    //             method: 'POST',
-    //             headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
-    //             body: JSON.stringify(linestosend)
-    //         })
-    //         .then((result) => {
-    //             console.log(`Draw query ${result.ok}, RTT: ${Date.now()-start}ms`);
-    //         });
-    //     }
-
-    // }
-
     updateCanvas(force=false) {
         let start = Date.now(); // time testing
 
         if (Date.now() >= this.lastChunkFetchTime+1000) {
             // console.log(Date.now());
             this.lastChunkFetchTime = Date.now();
-            let {startpoint, numchunks} = this.map_grid.getValues(this.mapoffset, this.chunksize*this.cellsize*this.scale);
+            let {startpoint, numchunks} = this.map_grid.getValues(this.mapoffset.multipliedby(this.scale), this.chunksize*this.cellsize*this.scale);
             // console.log(startpoint, this.startpoint);
             if (force) {
                 // console.log("querying for new chunks...");
@@ -467,11 +466,9 @@ class MapCanvas extends React.Component {
             } else {
                 this.drawMap(this.canvas, startpoint);
             }
-        } else {
-            this.drawMap(this.canvas, this.startpoint);
         }
-        
-        // requestAnimationFrame(() => {this.drawMap(this.canvas, startpoint);});
+
+        setTimeout(()=>{this.updateCanvas(true)}, 1000);
     }
 
     // stolen code lmao
@@ -495,7 +492,7 @@ class MapCanvas extends React.Component {
 
         let {cell_i, cell_j, cell_k, cell_l} = this.map_grid.getChunkPosOffset(currentpos, this.chunksize, this.startpoint);
         // console.log(`Insertion coords: x:${cell_i} y:${cell_j}`);
-        this.map_grid.matrix[cell_i][cell_j].addCell(cell_k, cell_l, this.getBlockSelected());
+        if (this.map_grid.matrix[cell_i][cell_j] !== undefined) this.map_grid.matrix[cell_i][cell_j].addCell(cell_k, cell_l, this.getBlockSelected());
         // console.log(`cell drawn at chunk ${cell_i},${cell_j}`);
     }
 
@@ -516,6 +513,7 @@ class MapCanvas extends React.Component {
             }
             this.currentcell = newcurrentcell;
             update = true;
+            this.changeCursorLoc(this.currentcell);
         }
         
         return update;
@@ -543,7 +541,7 @@ class MapCanvas extends React.Component {
                     if (e.button === 0) {
                         this.lmousedown=true;
                         this.drawLine(this.currentcell,this.currentcell);
-                        this.updateCanvas();
+                        this.drawMap(this.canvas, this.startpoint);
                     }
                     else if (e.button === 2) {
                         this.rmousedown=true;
@@ -552,32 +550,37 @@ class MapCanvas extends React.Component {
                 onMouseUp={(e) => {
                     this.lmousedown=false;
                     this.rmousedown=false;
-                    this.updateCanvas();
+                    this.drawMap(this.canvas, this.startpoint);
                 }}
                 onMouseMove={(e) => {
                     let update = false;
 
                     update = this.moveCursor(e);
 
-                    if (update) this.updateCanvas();
+                    if (update) this.drawMap(this.canvas, this.startpoint);
                 }}
                 onMouseLeave={(e) => {
                     // console.log("left canvas");
                     this.moveCursor(e);
                     this.lmousedown=false;
                     this.rmousedown=false;
-                    this.currentcell.setTo(-1,-1);
-                    this.updateCanvas();
+                    // this.currentcell.setTo(-1,-1);
+                    this.drawMap(this.canvas, this.startpoint);
                 }}
                 onWheel={(e) => {
                     e.preventDefault();
-                    let newscale = this.scale - Math.round(e.deltaY)/100;
-                    if (newscale>0.5) this.scale = newscale;
+                    let newscale = this.scale - Math.round(e.deltaY)/1000;
+                    let scaleinit = this.scale;
+                    if (newscale>0.5) {
+                        this.scale = newscale;
+                        const { width, height } = this.canvas.getBoundingClientRect();
+                        let nwidth = width/2;
+                        let nheight = height/2;
+                        this.moveMap(new Vector2D(0,0),new Vector2D((nwidth-(nwidth*(this.scale-scaleinit))),(nheight-(nheight*(this.scale-scaleinit)))));
+                    }
                     else this.scale = 0.5;
-                    // console.log(this.scale);
-                    // console.log(e.deltaY);
-                    this.updateCanvas();
-                    // if (this.scale < 1) console.table(this.map_grid.matrix);
+                    
+                    this.drawMap(this.canvas, this.startpoint);
                 }}
             ></canvas>
             </div>
