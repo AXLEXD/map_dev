@@ -4,58 +4,11 @@ import React, { createRef } from 'react';
 
 const CHUNKSIZE = 16;
 
-const blocksold = [
-    {
-        blockid: 0,
-        blockname: '1',
-        imagesrc: '#ffffff'
-    },
-    {
-        blockid: 1,
-        blockname: '2',
-        imagesrc: '#d1e7dc'
-    },
-    {
-        blockid: 2,
-        blockname: '3',
-        imagesrc: '#c4d4e1'
-    },
-    {
-        blockid: 3,
-        blockname: '4',
-        imagesrc: '#bcb5d3'
-    },
-    {
-        blockid: 4,
-        blockname: '5',
-        imagesrc: '#f5dbe2'
-    },
-    {
-        blockid: 5,
-        blockname: '6',
-        imagesrc: '#eeb6c9'
-    },
-    {
-        blockid: 6,
-        blockname: '7',
-        imagesrc: '#c49abf'
-    },
-    {
-        blockid: 7,
-        blockname: '8',
-        imagesrc: '#bada55'
-    },
-    {
-        blockid: 8,
-        blockname: '9',
-        imagesrc: '#ffd700'
-    },
-    {
-        blockid: 9,
-        blockname: '10',
-        imagesrc: '#f47b79'
-    }
-];
+const LOWESTSCALE = 3;
+
+const DRAWTOOL = 0;
+const EYEDROPTOOL = 1;
+const MOVETOOL = 2;
   
 const blocks = [
     {
@@ -244,14 +197,14 @@ class Vector2D {
 
 
 class Map {
-    constructor(w, h) {
-        this.canvasdimensions = new Vector2D(w,h); // establishing at start means no resizing canvas element
+    constructor() {
+        // this.canvasdimensions = new Vector2D(w,h); // establishing at start means no resizing canvas element
         this.data = null;
         this.dataview = null;
         this.numchunks = null;
     }
 
-    getValues(offset, scale) {
+    getValues(canvas, offset, scale) {
         let chunkpixels = CHUNKSIZE*scale;
 
         let numchunks = new Vector2D(0,0);
@@ -260,8 +213,10 @@ class Map {
         startpoint.x = (offset.x === 0) ? 0 : Math.floor((-1*offset.x)/chunkpixels);
         startpoint.y = (offset.y === 0) ? 0 : Math.floor((-1*offset.y)/chunkpixels);
 
-        numchunks.x = Math.ceil(this.canvasdimensions.x/chunkpixels)+1; // bit cheaty - should probs optimise
-        numchunks.y = Math.ceil(this.canvasdimensions.y/chunkpixels)+1;
+        const { width, height } = canvas.getBoundingClientRect();
+
+        numchunks.x = Math.ceil(width/chunkpixels)+1; // bit cheaty - should probs optimise
+        numchunks.y = Math.ceil(height/chunkpixels)+1;
 
         return {startpoint, numchunks};
     }
@@ -295,19 +250,22 @@ class Map {
     }
 
     getChunkPosOffset(currentcell, startpoint) {
-        const cell_i = Math.floor((currentcell.x/CHUNKSIZE))-startpoint.x;
-        const cell_k = currentcell.x - (cell_i+startpoint.x)*CHUNKSIZE;
+        const i = Math.floor((currentcell.x/CHUNKSIZE))-startpoint.x;
+        const k = currentcell.x - (i+startpoint.x)*CHUNKSIZE;
 
-        const cell_j = Math.floor((currentcell.y/CHUNKSIZE))-startpoint.y;
-        const cell_l = currentcell.y - (cell_j+startpoint.y)*CHUNKSIZE;
+        const j = Math.floor((currentcell.y/CHUNKSIZE))-startpoint.y;
+        const l = currentcell.y - (j+startpoint.y)*CHUNKSIZE;
 
 
-        return {cell_i, cell_j, cell_k, cell_l};
+        return {i, j, k, l};
     }
 
     addCell(index,colorhex) {
         this.dataview[index] = colorhex;
         // console.log(data[index], colorhex);
+    }
+    getDataIndex(i,j,k,l) {
+        return i*(this.numchunks.y)*(CHUNKSIZE*CHUNKSIZE)+j*(CHUNKSIZE*CHUNKSIZE)+k*CHUNKSIZE+l;
     }
 }
 
@@ -316,10 +274,10 @@ class AppWrapper extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            tool_mode: 0,
+            tool_mode: MOVETOOL,
             debug_mode: false,
             show_stats: true,
-            color_selected: 255*255, 
+            color_selected: 1672153, 
             update: {
                 time: 0,
                 tot_time: 0,
@@ -342,6 +300,10 @@ class AppWrapper extends React.Component {
         this.getDebugMode = () => {return this.state.debug_mode};
         this.getToolMode = () => {return this.state.tool_mode};
 
+        this.changeToolMode = (change_to) => {
+            this.setState({tool_mode: change_to});
+        }
+
         this.changeColor = (blockid) => {
             if (typeof blockid === 'string') {
                 let out_num = parseInt(blockid.substring(1), 16);
@@ -352,6 +314,7 @@ class AppWrapper extends React.Component {
             else if (typeof blockid === 'number') {
                 this.setState({color_selected: blockid});
             }
+            this.changeToolMode(DRAWTOOL);
         };
         this.isSelected = (blockid) => {
             if (typeof blockid === 'string') {
@@ -396,7 +359,9 @@ class AppWrapper extends React.Component {
         return (
             <div className='App-wrapper'>
                 <MapCanvas 
+                    toolmode={this.state.tool_mode}
                     getToolMode={this.getToolMode}
+                    changeToolMode={this.changeToolMode}
                     getDebugMode={this.getDebugMode}
                     changeUpdateTime={this.changeUpdateTime}
                     changeDrawTime={this.changeDrawTime}
@@ -404,21 +369,33 @@ class AppWrapper extends React.Component {
                     changeCursorLoc={this.changeCursorLoc}
                     changeOffsetLoc={this.changeOffsetLoc}
                     changeChunkLoc={this.changeChunkLoc}
+                    changeColor={this.changeColor}
                 />
                 <Palette isSelected={this.isSelected} changeColor={this.changeColor}/>
                 <div className='drawer primary'>
-                {(this.state.show_stats)?(<div style={{position: `absolute`,right:`0.8vw`}}>
-                    ({this.state.update.time}ms, avg: {Math.round(this.state.update.tot_time/this.state.update.num_updates)}ms, {this.state.update.num_updates} updates)
-                    <br/>({this.state.draw.time}ms, avg: {Math.round(this.state.draw.tot_time/this.state.draw.num_updates)}ms, {this.state.draw.num_updates} draws)
-                    <br/>Cursor: ({this.state.cursorx},{this.state.cursory})
-                    <br/>Offset: ({this.state.offsetx},{this.state.offsety})
-                    <br/>Chunk: ({this.state.chunkx},{this.state.chunky})
-                </div>):null}
-                <b>Instructions:</b><br/>This is a pixel art canvas with infinite area. Scroll to zoom in and out, right click to pan around, and use left click to draw on the canvas.
-                <br/>Use the palette on the right to select your colour.
-                <div style={{color: `#909090`}}>(!!!!) Be aware that there is no saving yet lol, also this is just a prototype so limited colours, no drawing tools etc.</div>
-                <input type={"checkbox"} onChange={()=>{this.setState({debug_mode:!this.state.debug_mode})}}></input> Debug Mode&ensp;
-                <input checked={this.state.show_stats} type={"checkbox"} onChange={()=>{this.setState({show_stats:!this.state.show_stats})}}></input> Stats
+                    {(this.state.show_stats)?(<div style={{position: `absolute`,right:`0.8vw`}}>
+                        ({this.state.update.time}ms, avg: {Math.round(this.state.update.tot_time/this.state.update.num_updates)}ms, {this.state.update.num_updates} updates)
+                        <br/>({this.state.draw.time}ms, avg: {Math.round(this.state.draw.tot_time/this.state.draw.num_updates)}ms, {this.state.draw.num_updates} draws)
+                        <br/>Cursor: ({this.state.cursorx},{this.state.cursory})
+                        <br/>Offset: ({this.state.offsetx},{this.state.offsety})
+                        <br/>Chunk: ({this.state.chunkx},{this.state.chunky})
+                    </div>):null}
+
+                    <div
+                        className={`toolbutton` + (this.getToolMode()===DRAWTOOL ? "selected" : "")+ ` blockbutton` + (this.getToolMode()===DRAWTOOL ? "selected" : "")}
+                        onClick={() => {this.changeToolMode(DRAWTOOL)}}
+                    >draw</div>
+                    <div
+                        className={`toolbutton` + (this.getToolMode()===EYEDROPTOOL ? "selected" : "")+ ` blockbutton` + (this.getToolMode()===EYEDROPTOOL ? "selected" : "")}
+                        onClick={() => {this.changeToolMode(EYEDROPTOOL)}}
+                    >eyedrop</div>
+                    <div
+                        className={`toolbutton` + (this.getToolMode()===MOVETOOL ? "selected" : "")+ ` blockbutton` + (this.getToolMode()===MOVETOOL ? "selected" : "")}
+                        onClick={() => {this.changeToolMode(MOVETOOL)}}
+                    >move</div>
+
+                    <input checked={this.state.debug_mode} type={"checkbox"} onChange={()=>{this.setState({debug_mode:!this.state.debug_mode})}}></input> Debug Mode&ensp;
+                    <input checked={this.state.show_stats} type={"checkbox"} onChange={()=>{this.setState({show_stats:!this.state.show_stats})}}></input> Stats
                 </div>
             </div>
         )
@@ -429,19 +406,12 @@ class MapCanvas extends React.Component {
     constructor(props) {
         super(props);
 
-        this.getDebugMode = props.getDebugMode;
-        this.getColorSelected = props.getColorSelected;
-        this.changeUpdateTime = props.changeUpdateTime;
-        this.changeDrawTime = props.changeDrawTime;
-
-        this.changeCursorLoc = props.changeCursorLoc;
-        this.changeOffsetLoc = props.changeOffsetLoc;
-        this.changeChunkLoc = props.changeChunkLoc;
-
         this.drawLines = [];
 
         this.scale = 16;
         this.tempscale = this.scale;
+
+        this.cellpos = {i:0,j:0,k:0,l:0};
 
         this.map_grid = null;
         this.canvasRef = createRef();
@@ -461,11 +431,7 @@ class MapCanvas extends React.Component {
     //Called after element's initialisation
     componentDidMount() { 
         this.canvas = this.canvasRef.current;
-
-        // this.resizeCanvas(this.canvas);
-        const { width, height } = this.canvas.getBoundingClientRect();
-        this.map_grid = new Map(width, height);
-
+        this.map_grid = new Map();
         setTimeout(this.updateCanvas(), 1000);
     }
 
@@ -474,7 +440,6 @@ class MapCanvas extends React.Component {
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
         const pos = new Vector2D(x,y);
-        // console.log(`cursor at (${x.toFixed(1)},${y.toFixed(1)})`);
         return pos;
     }
 
@@ -490,34 +455,35 @@ class MapCanvas extends React.Component {
         let y = (end.y-start.y)/this.scale;
         this.mapoffset.transform(x,y);
         this.celloffset.setTo(Math.floor(this.mapoffset.x),Math.floor(this.mapoffset.y));
-        this.changeOffsetLoc(this.celloffset);
+        this.props.changeOffsetLoc(this.celloffset);
     }
 
     drawMap (canvas, startpoint) {
         let start =  Date.now();
 
         this.resizeCanvas(canvas);
+        const { width, height } = canvas.getBoundingClientRect();
         const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        ctx.clearRect(0, 0, width, height)
         ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillRect(0, 0, width, height);
 
         // finding location in terms of iterators of current cell
-        let {cell_i, cell_j, cell_k, cell_l} = this.map_grid.getChunkPosOffset(this.currentcell, startpoint);
+        // let {cell_i, cell_j, cell_k, cell_l} = this.map_grid.getChunkPosOffset(this.currentcell, startpoint);
 
         let blockid;
         let x;
         let y;
 
-        let mapoffset_x = Math.round(this.mapoffset.x);
-        let mapoffset_y = Math.round(this.mapoffset.y);
+        let mapoffset_x = Math.floor(this.mapoffset.x*this.scale);
+        let mapoffset_y = Math.floor(this.mapoffset.y*this.scale);
         // let mapoffset_x = this.mapoffset.x;
         // let mapoffset_y = this.mapoffset.y;
 
         let doFill = (i,j,k,l) => {
 
-            x = (((i+startpoint.x)*CHUNKSIZE+k)+mapoffset_x)*(this.scale);
-            y = (((j+startpoint.y)*CHUNKSIZE+l)+mapoffset_y)*(this.scale);
+            x = (((i+startpoint.x)*CHUNKSIZE+k))*(this.scale)+mapoffset_x;
+            y = (((j+startpoint.y)*CHUNKSIZE+l))*(this.scale)+mapoffset_y;
             if (x%1!==0||y%1!==0||this.scale%1!==0) console.log("ALERT:", x, y, this.scale);
             ctx.fillRect(x, y, this.scale, this.scale);
             // console.log(x,y,cellapparentsize);
@@ -527,32 +493,28 @@ class MapCanvas extends React.Component {
 
 
         let chunkbufferoffset = 0;
-        let data = new Uint32Array(this.map_grid.data);
 
-        if (this.getDebugMode()) ctx.beginPath();
+        if (this.props.getDebugMode()) ctx.beginPath();
         for (let i=0;i<this.map_grid.numchunks.x;i++) {
             for (let j=0;j<this.map_grid.numchunks.y;j++) {
                 // for each chunk
-                if (this.getDebugMode()) {
-                    x = (((i+startpoint.x)*CHUNKSIZE)+mapoffset_x)*(this.scale);
-                    y = (((j+startpoint.y)*CHUNKSIZE)+mapoffset_y)*(this.scale);
+                if (this.props.getDebugMode()) {
+                    x = (((i+startpoint.x)*CHUNKSIZE))*(this.scale)+mapoffset_x;
+                    y = (((j+startpoint.y)*CHUNKSIZE))*(this.scale)+mapoffset_y;
 
                     ctx.fillStyle = "#000000";
                     ctx.lineWidth = 0.01*Math.floor(this.scale);
                     ctx.moveTo(x, 0);
-                    ctx.lineTo(x, this.canvas.height/2);
+                    ctx.lineTo(x, height);
                     // ctx.stroke();
                     ctx.moveTo(0, y);
-                    ctx.lineTo(this.canvas.width/2, y);
+                    ctx.lineTo(width, y);
                 }
                 for (let c=0;c<(CHUNKSIZE*CHUNKSIZE);c++) {
                     let k = Math.floor(c/CHUNKSIZE);
                     let l = c-(k*CHUNKSIZE);
-
-                    // if (typeof this.map_grid.matrix[i][j] === 'undefined') continue;
-
-                    blockid = data[chunkbufferoffset+c];
-                    // if (c%100===0) console.log(blockid);
+                    
+                    blockid = this.map_grid.dataview[chunkbufferoffset+c];
 
                     if (blockid!==16777215){
                         // ctx.fillStyle = blockid.toString(16);
@@ -564,27 +526,26 @@ class MapCanvas extends React.Component {
                 chunkbufferoffset += (CHUNKSIZE*CHUNKSIZE);
             }
         }
-        if (this.getDebugMode()) ctx.stroke();
-        // ctx.fillStyle = "#" + this.getColorSelected() + "8f"; // placeholder until get images
-        // console.log(this.getColorSelected());
-        // console.log((this.getColorSelected() & 0x00FFFFFF).toString(16).padStart(6, '0'));
-        ctx.fillStyle = "#"+(this.getColorSelected() & 0x00FFFFFF).toString(16).padStart(6, '0')+"ff";
-        doFill(cell_i,cell_j,cell_k,cell_l);
+        if (this.props.getDebugMode()) ctx.stroke();
 
-        this.changeDrawTime(Date.now()-start);
+        if (this.props.toolmode===DRAWTOOL) {
+            ctx.fillStyle = "#"+(this.props.getColorSelected() & 0x00FFFFFF).toString(16).padStart(6, '0')+"ff";
+            doFill(this.cellpos.i,this.cellpos.j,this.cellpos.k,this.cellpos.l);
+        }
+        this.props.changeDrawTime(Date.now()-start);
     }
 
     updateCanvas() {
         let start = Date.now(); // time testing
 
-        let {startpoint, numchunks} = this.map_grid.getValues(this.mapoffset.multipliedby(this.scale), this.scale);
+        let {startpoint, numchunks} = this.map_grid.getValues(this.canvas, this.mapoffset.multipliedby(this.scale), this.scale);
         let linestosend = this.drawLines;
         this.drawLines = [];
         this.map_grid.setMatrix(numchunks, startpoint, linestosend)
         .then(()=>{
             this.drawMap(this.canvas, startpoint);
             this.startpoint = startpoint;
-            this.changeUpdateTime(Date.now()-start);
+            this.props.changeUpdateTime(Date.now()-start);
         });
 
         setTimeout(()=>{this.updateCanvas()}, 1000);
@@ -597,9 +558,8 @@ class MapCanvas extends React.Component {
         if (canvas.width !== width || canvas.height !== height) {
           const { devicePixelRatio:ratio=1 } = window;
           const context = canvas.getContext('2d');
-          canvas.width = Math.floor((1*width*ratio)/this.scale)*this.scale;
-          canvas.height = Math.floor((1*height*ratio)/this.scale)*this.scale;
-        //   console.log(canvas.width, canvas.height);
+          canvas.width = (1*width*ratio);
+          canvas.height = (1*height*ratio);
           context.scale(ratio, ratio);
           return true;
         }
@@ -610,9 +570,9 @@ class MapCanvas extends React.Component {
     drawCellAtMouse(x,y) {
         const currentpos = new Vector2D(x-this.celloffset.x,y-this.celloffset.y);
 
-        let {cell_i, cell_j, cell_k, cell_l} = this.map_grid.getChunkPosOffset(currentpos, this.startpoint);
-        let dataindex = cell_i*(this.map_grid.numchunks.y)*(CHUNKSIZE*CHUNKSIZE)+cell_j*(CHUNKSIZE*CHUNKSIZE)+cell_k*CHUNKSIZE+cell_l;
-        if (dataindex < this.map_grid.data.byteLength/4) this.map_grid.addCell(dataindex, this.getColorSelected());
+        let {i, j, k, l} = this.map_grid.getChunkPosOffset(currentpos, this.startpoint);
+        let dataindex = this.map_grid.getDataIndex(i,j,k,l);
+        if (dataindex < this.map_grid.data.byteLength/4) this.map_grid.addCell(dataindex, this.props.getColorSelected());
     }
 
     moveCursor(event) {
@@ -628,9 +588,9 @@ class MapCanvas extends React.Component {
         if (!this.currentcell.isEqualTo(newcurrentcell)) {
             if (this.lmousedown) this.drawLine(this.currentcell,newcurrentcell);
             this.currentcell = newcurrentcell;
-            let {cell_i, cell_j, cell_k, cell_l} = this.map_grid.getChunkPosOffset(this.currentcell, this.startpoint);
-            this.changeCursorLoc(this.currentcell);
-            this.changeChunkLoc(cell_i+this.startpoint.x,cell_j+this.startpoint.y);
+            this.cellpos = this.map_grid.getChunkPosOffset(this.currentcell, this.startpoint);
+            this.props.changeCursorLoc(this.currentcell);
+            this.props.changeChunkLoc(this.cellpos.i+this.startpoint.x,this.cellpos.j+this.startpoint.y);
             update = true;
         }
         return update;
@@ -638,24 +598,48 @@ class MapCanvas extends React.Component {
 
     drawLine(p1,p2) {
         plotLine(p1, p2, this.celloffset, (x,y)=>this.drawCellAtMouse(x,y));
-        this.drawLines.push({p1:p1,p2:p2,offset:this.celloffset,blockid:this.getColorSelected()});
+        this.drawLines.push({p1:p1,p2:p2,offset:this.celloffset,blockid:this.props.getColorSelected()});
     }
 
     render() {
+        let getCursor = ()=>{
+            switch (this.props.toolmode) {
+                case EYEDROPTOOL:
+                    return "crosshair";
+                case MOVETOOL:
+                    return "move";
+                default:
+                    return "default";
+            }
+        }
         return (
-            <div>
             <canvas 
-                ref={this.canvasRef} 
+                ref={this.canvasRef}
                 className='map-canvas primary'
+                style={{cursor:getCursor()}}
                 onContextMenu={(e) => {
                     e.preventDefault();
                 }}
                 onMouseDown={(e) => {
                     e.preventDefault();
                     if (e.button === 0) {
-                        this.lmousedown=true;
-                        this.drawLine(this.currentcell,this.currentcell);
-                        this.drawMap(this.canvas, this.startpoint);
+                        switch (this.props.toolmode) {
+                            case EYEDROPTOOL:
+                                console.log("eyedroptool used");
+                                let {i,j,k,l} = this.map_grid.getChunkPosOffset(this.currentcell, this.startpoint);
+                                let dataindex = this.map_grid.getDataIndex(i,j,k,l);
+                                this.props.changeColor(this.map_grid.dataview[dataindex]);
+                                // this.props.changeToolMode(DRAWTOOL);
+                                break;
+                            case MOVETOOL:
+                                this.rmousedown=true;
+                                break;
+                            default:
+                                this.lmousedown=true;
+                                this.drawLine(this.currentcell,this.currentcell);
+                                this.drawMap(this.canvas, this.startpoint);
+                                break;
+                        }
                     }
                     else if (e.button === 2) {
                         this.rmousedown=true;
@@ -676,17 +660,15 @@ class MapCanvas extends React.Component {
                     this.drawMap(this.canvas, this.startpoint);
                 }}
                 onWheel={(e) => {
-                    e.preventDefault();
-                    let newscale = this.tempscale - Math.round(e.deltaY)/1000;
-                    console.log(this.scale, this.tempscale);
-                    if (newscale>5) this.tempscale = newscale;
-                    else this.tempscale = 5;
-                    this.scale = Math.round(this.tempscale);
+                    let newscale = this.tempscale - Math.floor(e.deltaY)/1000;
+                    // console.log(this.scale, this.tempscale);
+                    if (newscale>LOWESTSCALE) this.tempscale = newscale;
+                    else this.tempscale = LOWESTSCALE;
+                    this.scale = Math.floor(this.tempscale);
                     
                     this.drawMap(this.canvas, this.startpoint);
                 }}
             ></canvas>
-            </div>
         )
     }
 }
@@ -696,10 +678,8 @@ class Palette extends React.Component {
     constructor(props) {
         super(props);
 
-        this.changeColor = props.changeColor;
-
         this.handleChange = (e) => {
-            this.changeColor(e.target.value);
+            this.props.changeColor(e.target.value);
         }
     }
 
@@ -712,7 +692,7 @@ class Palette extends React.Component {
                             key={button.blockid} 
                             style={{backgroundColor: `${button.imagesrc}`}} 
                             className={`blockbutton` + (this.props.isSelected(button.imagesrc) ? "selected" : "")}
-                            onClick={() => {this.changeColor(button.imagesrc)}}
+                            onClick={() => {this.props.changeColor(button.imagesrc)}}
                             //onClick={() => {console.log(button.blockid)}}
                             ></div>
                     ))

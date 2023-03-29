@@ -15,7 +15,6 @@
 
 
 .App {
-  text-align: center;
   color: #000000;
   color: #225313;
   color: #0025f5;
@@ -49,14 +48,6 @@
 
 .primary {
   position: absolute;
-  color: #c4d4e1;
-  color: #bcb5d3;
-  color: #f5dbe2;
-  color: #eeb6c9;
-  color: #c49abf;
-  color: #f47b79;
-  color: rgb(196, 212, 225);
-  color: rgb(196, 212, 225);
 }
 
 .map-canvas {
@@ -83,6 +74,7 @@
   border-radius: var(--global_border_radius);
   box-sizing: border-box;
   padding:0.8vw;
+  gap:10px;
 }
 
 .drawer {
@@ -94,7 +86,33 @@
   border-radius: var(--global_border_radius);
   box-sizing: border-box;
   padding: 1.5vh;
-  text-align: left;
+
+  gap:10px;
+  /* align-items:start; */
+  display: flex;
+  flex-direction: row;
+  align-items:center;
+  /* justify-content: left; */
+}
+
+div .toolbutton {
+  border-radius: 40%;
+  border: 2px solid rgb(99, 99, 99);
+  transition: 0.3s;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items:center;
+  text-align: center;
+  background-color: #4a4a4a;
+}
+div .toolbutton:hover,div .toolbuttonselected {
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items:center;
+  text-align: center;
 }
 
 .blockbutton {
@@ -104,7 +122,6 @@
   border: 2px solid #2c2c2c00;
   height: 8vmin;
   width: 8vmin;
-  margin: auto;
 }
 .blockbutton:hover, .blockbuttonselected {
   cursor: pointer;
@@ -114,5 +131,4 @@
   width: 8vmin;
   max-width: 20vh;
   max-height: 20vh;
-  margin: auto;
 }
