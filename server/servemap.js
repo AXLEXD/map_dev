@@ -19,84 +19,68 @@ const chunksize = 16;
 const cellsize = 8;
 
 
-// convert(connection);
-
-// function testsql() {
-//     connection.connect();
-    
-//     let equation = "70/5";
-//     connection.query(`SELECT ${equation} AS solution`, (err, rows, fields) => {
-//         if (err) throw err;
-
-//         console.log('The solution is: ', rows[0].solution);
-//     });
-
-//     
-// }
-
-function getColorAsHex(colorchar) {
-    console.log(colorchar);
-    let finalstring;
-    switch (colorchar) {
-        case "0":
-            finalstring = ["ff","ff","ff"]
-            break;
-        case "1":
-            finalstring = ["d1","e7","dc"]
-            break;
-        case "2":
-            finalstring = ["c4","d4","e1"]
-            break;
-        case "3":
-            finalstring = ["bc","b5","d3"]
-            break;
-        case "4":
-            finalstring = ["f5","db","e2"]
-            break;
-        case "5":
-            finalstring = ["ee","b6","c9"]
-            break;
-        case "6":
-            finalstring = ["c4","9a","bf"]
-            break;
-        case "7":
-            finalstring = ["ba","da","55"]
-            break;
-        case "8":
-            finalstring = ["ff","d7","00"]
-            break;
-        case "9":
-            finalstring = ["f4","7b","79"]
-            break;
-        case "a":
-            finalstring = ["c6","e2","d4"]
-            break;
-        case "b":
-            finalstring = ["b6","d3","c2"]
-            break;
-        case "c":
-            finalstring = ["e0","b1","cb"]
-            break;
-        case "d":
-            finalstring = ["d0","a7","b7"]
-            break;
-        case "e":
-            finalstring = ["f3","d1","d3"]
-            break;
-        case "f":
-            finalstring = ["e9","b8","c8"]
-            break;
-        
-        default:
-            throw "fuck";
-    }
-
-    // return parseInt(finalstring, 16);
-    return finalstring.reverse().join('')+"00";
-};
-
-
 function convert(oldconnection) {
+
+    function getColorAsHex(colorchar) {
+        console.log(colorchar);
+        let finalstring;
+        switch (colorchar) {
+            case "0":
+                finalstring = ["ff","ff","ff"]
+                break;
+            case "1":
+                finalstring = ["d1","e7","dc"]
+                break;
+            case "2":
+                finalstring = ["c4","d4","e1"]
+                break;
+            case "3":
+                finalstring = ["bc","b5","d3"]
+                break;
+            case "4":
+                finalstring = ["f5","db","e2"]
+                break;
+            case "5":
+                finalstring = ["ee","b6","c9"]
+                break;
+            case "6":
+                finalstring = ["c4","9a","bf"]
+                break;
+            case "7":
+                finalstring = ["ba","da","55"]
+                break;
+            case "8":
+                finalstring = ["ff","d7","00"]
+                break;
+            case "9":
+                finalstring = ["f4","7b","79"]
+                break;
+            case "a":
+                finalstring = ["c6","e2","d4"]
+                break;
+            case "b":
+                finalstring = ["b6","d3","c2"]
+                break;
+            case "c":
+                finalstring = ["e0","b1","cb"]
+                break;
+            case "d":
+                finalstring = ["d0","a7","b7"]
+                break;
+            case "e":
+                finalstring = ["f3","d1","d3"]
+                break;
+            case "f":
+                finalstring = ["e9","b8","c8"]
+                break;
+            
+            default:
+                throw "fuck";
+        }
+    
+        // return parseInt(finalstring, 16);
+        return finalstring.reverse().join('')+"00";
+    };
    let currenttime = Date.now();
 
 
@@ -144,17 +128,15 @@ function convert(oldconnection) {
 }
 
 
-
-
-
-
-function readChunk(coordslist) {
+function readChunk(coordslist, ip) {
+    let start  = Date.now();
     const generalscondition = (() => {let concatenatedString = ''; for (let i = 0; i < coordslist.length; i++) {concatenatedString += `${(i===0) ? `` : ` OR`} ${coords_col} = \"${coordslist[i].x},${coordslist[i].y}\"`;} return concatenatedString;})();
     const SQLQuery2 = `SELECT * FROM ${tablename} WHERE` + generalscondition;
 
     return new Promise(function(resolve, reject) {
         connection.query(SQLQuery2, (err, rows, fields) => {
             if (err) throw err;
+            let querytime = Date.now();
 
             // make buffer
             const chunklength = (chunksize*chunksize);
@@ -189,6 +171,7 @@ function readChunk(coordslist) {
                 chunkbufferoffset+=chunklength;
             });
 
+            if (typeof ip !== 'undefined') console.log(`\x1b[2m\x1b[90m| READ | : q:${querytime-start}ms p:${Date.now()-querytime}ms Querying chunks (${coordslist[0].x},${coordslist[0].y}) to (${coordslist[coordslist.length-1].x},${coordslist[coordslist.length-1].y}) for user ${ip} \x1b[0m`);
             resolve(chunkbuffer);
         });
     });

@@ -1,7 +1,10 @@
 const serve = require('./servemap.js');
+const mapimage = require('./mapimage.js');
 
 const path = require('path');
 const express = require("express");
+const fs = require('fs')
+
 
 const PORT = process.env.PORT || 3001;
 
@@ -17,7 +20,7 @@ app.use(express.json({limit: '50mb'}));
 // app.use(bodyParser.urlencoded({ extended: false }))
 
 app.post("/getchunks", (req, res) => {
-  var ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress
+  var ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   let coordslist = req.body.coords;
   let linelist = req.body.lines;
 
@@ -27,9 +30,8 @@ app.post("/getchunks", (req, res) => {
   serve.writeLines(linelist, ip).then((result)=>{
     if (result) console.log(`\x1b[1m\x1b[32m# DRAW # : (${Date.now()-current}ms) Drew ${linelist.length} lines for  user ${ip}\x1b[0m`);
   })
-  .then(()=>{return serve.readChunk(coordslist)})
+  .then(()=>{return serve.readChunk(coordslist, ip)})
   .then((readchunks) => {
-    console.log(`\x1b[2m\x1b[90m| READ | : (${Date.now()-current}ms) Querying chunks (${coordslist[0].x},${coordslist[0].y}) to (${coordslist[coordslist.length-1].x},${coordslist[coordslist.length-1].y}) for user ${ip} \x1b[0m`);
     // console.log(req.accepts("octet-stream"));
     res.set('Content-Type', 'application/octet-stream');
     // console.log(readchunks);
@@ -39,8 +41,18 @@ app.post("/getchunks", (req, res) => {
   
 });
 
-app.post("/test", (req, res) => {
-  console.log(req.body);
+app.post("/getimage", (req, res) => {
+  var ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  let coordsobj = req.body;
+
+  let current = Date.now();
+
+  mapimage.MakeImage(coordsobj.x1, coordsobj.y1, coordsobj.x2, coordsobj.y2, coordsobj.startpoint, serve.readChunk).then((stream)=>{
+    console.log(`\x1b[1m\x1b[7m$ DPNG $ : (${Date.now()-current}ms) Uploaded PNG image of chunks ${coordsobj.x1},${coordsobj.y1} to ${coordsobj.x2},${coordsobj.y2} for user ${ip}\x1b[0m`)
+    let filename = `(${coordsobj.x1},${coordsobj.y1})-(${coordsobj.x2},${coordsobj.y2})_${new Date().toTimeString().split(" ")[0].replace(":","_")}.png`;
+    res.set('Content-disposition', `attachment; filename="${filename}"`);
+    stream.pipe(res);
+  });
 });
 
 // All other GET requests not handled before will return our React app
@@ -53,7 +65,7 @@ app.listen(PORT, () => {
   serve.connection.connect();
 });
 
-app.on('uncaughtException', function (err) {
+app.on('ECONNRESET', function (err) {
   console.error(err.stack);
   console.log("Recieved error, NOT Exiting...");
   serve.connection.end();

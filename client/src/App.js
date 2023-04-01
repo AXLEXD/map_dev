@@ -294,6 +294,11 @@ class AppWrapper extends React.Component {
             offsety: 0,
             chunkx: 0,
             chunky: 0,
+
+            cxstart:0,
+            cystart:0,
+            cxend:0,
+            cyend:0
         };
 
         this.getColorSelected = () => {return this.state.color_selected};
@@ -355,6 +360,30 @@ class AppWrapper extends React.Component {
         document.body.style.overflow = "hidden"; // stops user from scrolling the page
     }
 
+    mapDownload() {
+        let filename;
+        let coordsobj = {x1:this.state.cxstart,y1:this.state.cystart,x2:this.state.cxend,y2:this.state.cyend};
+        if (coordsobj.x1===coordsobj.x2 || coordsobj.y1===coordsobj.y2 || coordsobj.x1>coordsobj.x2 || coordsobj.y1>coordsobj.y2) return;
+
+        fetch('/getimage',{
+            method: 'POST',
+            headers: {'Accept': 'application/octet-stream', 'Content-Type': 'application/json'},
+            body: JSON.stringify(coordsobj)
+        }).then((response) => {
+            filename = response.headers.get('Content-Disposition').split('"')[1];
+            return response.blob()
+        })
+        .then((pngblob) => {
+            const url = window.URL.createObjectURL(pngblob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download',filename);
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode.removeChild(link);
+        });
+    }
+
     render() {
         return (
             <div className='App-wrapper'>
@@ -393,9 +422,27 @@ class AppWrapper extends React.Component {
                         className={`toolbutton` + (this.getToolMode()===MOVETOOL ? "selected" : "")+ ` blockbutton` + (this.getToolMode()===MOVETOOL ? "selected" : "")}
                         onClick={() => {this.changeToolMode(MOVETOOL)}}
                     >move</div>
+                    
 
                     <input checked={this.state.debug_mode} type={"checkbox"} onChange={()=>{this.setState({debug_mode:!this.state.debug_mode})}}></input> Debug Mode&ensp;
                     <input checked={this.state.show_stats} type={"checkbox"} onChange={()=>{this.setState({show_stats:!this.state.show_stats})}}></input> Stats
+                    <table
+                        className={`download-wrapper`}
+                        // onClick={() => this.fileDownload()}
+                    >
+                        <tr>
+                            <p>from:&nbsp;</p><input defaultValue={"0"} type={"number"} style={{width:"35px"}} onChange={(e)=>this.setState({cxstart:parseInt(e.target.value)})}></input>
+                            <input defaultValue={"0"} type={"number"} style={{width:"35px"}} onChange={(e)=>this.setState({cystart:parseInt(e.target.value)})}></input>
+                        </tr>
+                        <tr>
+                            <p>to:&nbsp;</p><input defaultValue={"0"} type={"number"} style={{width:"35px"}} onChange={(e)=>this.setState({cxend:parseInt(e.target.value)})}></input>
+                            <input defaultValue={"0"} type={"number"} style={{width:"35px"}} onChange={(e)=>this.setState({cyend:parseInt(e.target.value)})}></input>
+                        </tr>
+                        <tr>
+                            <p >Save PNG:</p>
+                            <div className={`download-button`} onClick={() => this.mapDownload()}><img src='save.png'/></div>
+                        </tr>
+                    </table>
                 </div>
             </div>
         )
@@ -407,6 +454,8 @@ class MapCanvas extends React.Component {
         super(props);
 
         this.drawLines = [];
+
+        this.lastdraw = 0;
 
         this.scale = 16;
         this.tempscale = this.scale;
@@ -460,6 +509,9 @@ class MapCanvas extends React.Component {
 
     drawMap (canvas, startpoint) {
         let start =  Date.now();
+
+        // if (start < (this.lastdraw + 1000/60)) return; // Only drawing every 1/60th of a second
+        this.lastdraw = start;
 
         this.resizeCanvas(canvas);
         const { width, height } = canvas.getBoundingClientRect();
@@ -664,9 +716,10 @@ class MapCanvas extends React.Component {
                     // console.log(this.scale, this.tempscale);
                     if (newscale>LOWESTSCALE) this.tempscale = newscale;
                     else this.tempscale = LOWESTSCALE;
+                    let oldscale = this.scale;
                     this.scale = Math.floor(this.tempscale);
                     
-                    this.drawMap(this.canvas, this.startpoint);
+                    if (oldscale!==this.scale) this.drawMap(this.canvas, this.startpoint);
                 }}
             ></canvas>
         )
