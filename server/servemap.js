@@ -131,7 +131,7 @@ function convert(oldconnection) {
 function readChunk(coordslist, ip) {
     let start  = Date.now();
     const generalscondition = (() => {let concatenatedString = ''; for (let i = 0; i < coordslist.length; i++) {concatenatedString += `${(i===0) ? `` : ` OR`} ${coords_col} = \"${coordslist[i].x},${coordslist[i].y}\"`;} return concatenatedString;})();
-    const SQLQuery2 = `SELECT * FROM ${tablename}`;// WHERE` + generalscondition;
+    const SQLQuery2 = `SELECT * FROM ${tablename} WHERE` + generalscondition;
 
     return new Promise(function(resolve, reject) {
         connection.query(SQLQuery2, (err, rows, fields) => {
