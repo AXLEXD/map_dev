@@ -10,6 +10,20 @@ const PORT = process.env.PORT || 3001;
 
 const app = express();
 
+let queriescount = 0;
+const QUERIES_MAX = 10;
+
+// Workaround to stop ECONNRESET fatal error
+function doQueryCount() {
+  queriescount++;
+  if (queriescount>QUERIES_MAX) {
+    console.log(`\x1b[1m\x1b[5m\x1b[33m& RESET & : Max Queries reached, resetting connection\x1b[0m`); 
+    queriescount=0;
+    // serve.connection.end();
+    // serve.connection.connect();
+  }
+}
+
 // Have Node serve the files for our built React app
 app.use(express.static(path.resolve(__dirname, '../client/build')));
 
@@ -20,6 +34,7 @@ app.use(express.json({limit: '50mb'}));
 // app.use(bodyParser.urlencoded({ extended: false }))
 
 app.post("/getchunks", (req, res) => {
+  // doQueryCount();
   var ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   let coordslist = req.body.coords;
   let linelist = req.body.lines;
@@ -37,11 +52,10 @@ app.post("/getchunks", (req, res) => {
     // console.log(readchunks);
     res.end(readchunks);
   });
-  
-  
 });
 
 app.post("/getimage", (req, res) => {
+  // doQueryCount();
   var ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   let coordsobj = req.body;
 
@@ -62,13 +76,13 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server listening on ${PORT}`);
-  serve.connection.connect();
+  // serve.connection.connect();
 });
 
-app.on('ECONNRESET', function (err) {
-  console.error(err.stack);
-  console.log("Recieved error, NOT Exiting...");
-  serve.connection.end();
-  serve.connection.connect();
-});
+// app.on('ECONNRESET', function (err) {
+//   console.error(err.stack);
+//   console.log("Recieved error, NOT Exiting...");
+//   serve.connection.end();
+//   serve.connection.connect();
+// });
 
