@@ -160,11 +160,11 @@ function readChunk(coordslist, ip) {
                     let current32 = new Uint32Array(currentrow.buffer, currentrow.byteOffset, currentrow.byteLength / Uint32Array.BYTES_PER_ELEMENT);
                     // console.log(current32); 
                     for (let i=0;i<chunklength;i++) {
-                        chunksview[chunkbufferoffset+i] = current32[i];
+                        chunksview[chunkbufferoffset+i] = (current32[i] | 0xFF000000);
                     }
                 } else {
                     for (let i=0;i<chunklength;i++) {
-                        chunksview[chunkbufferoffset+i] = 16777215; // white
+                        chunksview[chunkbufferoffset+i] = (16777215) | 0xFF000000; // white
                     }
                     // console.log("empty chunk", item);
                 }

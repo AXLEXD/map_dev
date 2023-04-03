@@ -2,6 +2,8 @@ import './App.css';
 import React, { createRef } from 'react';
 
 
+const UPDATEPERIOD = 1000;
+
 const CHUNKSIZE = 16;
 
 const LOWESTSCALE = 3;
@@ -10,90 +12,126 @@ const DRAWTOOL = 0;
 const EYEDROPTOOL = 1;
 const MOVETOOL = 2;
   
-const blocks = [
-    {
-        blockid: '0',
-        blockname: '1',
-        imagesrc: '#ffffff'
-    },
-    {
-        blockid: '1',
-        blockname: '2',
-        imagesrc: '#d1e7dc'
-    },
-    {
-        blockid: '2',
-        blockname: '3',
-        imagesrc: '#c4d4e1'
-    },
-    {
-        blockid: '3',
-        blockname: '4',
-        imagesrc: '#bcb5d3'
-    },
-    {
-        blockid: '4',
-        blockname: '5',
-        imagesrc: '#f5dbe2'
-    },
-    {
-        blockid: '5',
-        blockname: '6',
-        imagesrc: '#eeb6c9'
-    },
-    {
-        blockid: '6',
-        blockname: '7',
-        imagesrc: '#c49abf'
-    },
-    {
-        blockid: '7',
-        blockname: '8',
-        imagesrc: '#bada55'
-    },
-    {
-        blockid: '8',
-        blockname: '9',
-        imagesrc: '#ffd700'
-    },
-    {
-        blockid: '9',
-        blockname: '10',
-        imagesrc: '#f47b79'
-    },
-    {
-        blockid: 'a',
-        blockname: '11',
-        imagesrc: '#c6e2d4'
-    },
-    {
-        blockid: 'b',
-        blockname: '12',
-        imagesrc: '#b6d3c2'
-    },
-    {
-        blockid: 'c',
-        blockname: '13',
-        imagesrc: '#e0b1cb'
-    },
-    {
-        blockid: 'd',
-        blockname: '14',
-        imagesrc: '#d0a7b7'
-    },
-    {
-        blockid: 'e',
-        blockname: '15',
-        imagesrc: '#f3d1d3'
-    },
-    {
-        blockid: 'f',
-        blockname: '16',
-        imagesrc: '#e9b8c8'
-    }
-];
+// const blocks = [
+//     {
+//         blockid: '0',
+//         blockname: '1',
+//         imagesrc: '#ffffff'
+//     },
+//     {
+//         blockid: '1',
+//         blockname: '2',
+//         imagesrc: '#d1e7dc'
+//     },
+//     {
+//         blockid: '2',
+//         blockname: '3',
+//         imagesrc: '#c4d4e1'
+//     },
+//     {
+//         blockid: '3',
+//         blockname: '4',
+//         imagesrc: '#bcb5d3'
+//     },
+//     {
+//         blockid: '4',
+//         blockname: '5',
+//         imagesrc: '#f5dbe2'
+//     },
+//     {
+//         blockid: '5',
+//         blockname: '6',
+//         imagesrc: '#eeb6c9'
+//     },
+//     {
+//         blockid: '6',
+//         blockname: '7',
+//         imagesrc: '#c49abf'
+//     },
+//     {
+//         blockid: '7',
+//         blockname: '8',
+//         imagesrc: '#bada55'
+//     },
+//     {
+//         blockid: '8',
+//         blockname: '9',
+//         imagesrc: '#ffd700'
+//     },
+//     {
+//         blockid: '9',
+//         blockname: '10',
+//         imagesrc: '#f47b79'
+//     },
+//     {
+//         blockid: 'a',
+//         blockname: '11',
+//         imagesrc: '#c6e2d4'
+//     },
+//     {
+//         blockid: 'b',
+//         blockname: '12',
+//         imagesrc: '#b6d3c2'
+//     },
+//     {
+//         blockid: 'c',
+//         blockname: '13',
+//         imagesrc: '#e0b1cb'
+//     },
+//     {
+//         blockid: 'd',
+//         blockname: '14',
+//         imagesrc: '#d0a7b7'
+//     },
+//     {
+//         blockid: 'e',
+//         blockname: '15',
+//         imagesrc: '#f3d1d3'
+//     },
+//     {
+//         blockid: 'f',
+//         blockname: '16',
+//         imagesrc: '#e9b8c8'
+//     }
+// ];
 
+const colors = [
+    "#000000", // Black
+    "#FFFFFF", // White
+    "#FF0000", // Red
+    "#00FF00", // Green
+    "#0000FF", // Blue
+    "#FFFF00", // Yellow
+    "#FF00FF", // Magenta
+    "#00FFFF", // Cyan
+    "#800000", // Maroon
+    "#008000", // Olive
+    "#000080", // Navy
+    "#808000", // Olive Drab
+    "#800080", // Purple
+    "#008080", // Teal
+    "#808080", // Gray
+    "#C0C0C0", // Silver
+    "#FFC0CB", // Pink
+    "#FFA07A", // Light Salmon
+    "#FF7F50", // Coral
+    "#FF6347", // Tomato
+    "#FF4500", // Orange Red
+    "#FF8C00", // Dark Orange
+    "#FFD700", // Gold
+    "#FFFFE0", // Light Yellow
+    "#EEE8AA", // Pale Goldenrod
+    "#ADFF2F", // Green Yellow
+    "#32CD32", // Lime Green
+    "#00FA9A", // Medium Spring Green
+    "#00CED1", // Dark Turquoise
+    "#6A5ACD", // Slate Blue
+    "#7B68EE", // Medium Slate Blue
+    "#FF69B4", // Hot Pink
+    "#8B4513" // Saddle Brown
+  ];
   
+
 
 function plotLineLow(x0, y0, x1, y1, drawFunc) {
     let dx = x1 - x0;
@@ -160,6 +198,13 @@ function plotLine(p1, p2, offset, drawFunc) {
 }
 
 
+function colorTo32Uint(colorstring) {
+    return parseInt(colorstring.substring(1), 16);
+}
+function colorToString(colornum) {
+    return "#" + (colornum & 0x00FFFFFF).toString(16).padStart(6, '0');
+}
+
 class Vector2D {
     constructor(x,y) {
         this.x = x;
@@ -202,6 +247,7 @@ class Map {
         this.data = null;
         this.dataview = null;
         this.numchunks = null;
+        this.cellsize = 2;
     }
 
     getValues(canvas, offset, scale) {
@@ -221,7 +267,7 @@ class Map {
         return {startpoint, numchunks};
     }
 
-    setMatrix(dimn, start, lines) {
+    async setMatrix(dimn, start, lines, cellsize) {
 
         let coords = [];
         let map_grid = this;
@@ -240,10 +286,37 @@ class Map {
             }).then((data)=>{
                 return data.arrayBuffer();
             }).then((chunkbuffer) => {
-                // console.log([...new Uint8Array(chunkbuffer)].map(x => x.toString(16).padStart(2, '0')));
-                map_grid.data = chunkbuffer;
-                map_grid.dataview = new Uint32Array(map_grid.data);
+                
                 map_grid.numchunks = dimn;
+                let current = Date.now();
+
+                // const cellsize = 10;
+                map_grid.data = new ArrayBuffer(chunkbuffer.byteLength*cellsize*cellsize);
+                map_grid.dataview = new Uint32Array(map_grid.data);
+
+                let Uint32data = new Uint32Array(chunkbuffer);
+                
+                for (let i=0;i<map_grid.numchunks.x;i++) {
+                    for (let j=0;j<map_grid.numchunks.y;j++) {
+                        for (let k=0;k<CHUNKSIZE;k++) {
+                            for (let l=0;l<CHUNKSIZE;l++) {
+                                let bmp_index = i*CHUNKSIZE*cellsize + j*map_grid.numchunks.x*(CHUNKSIZE*CHUNKSIZE)*cellsize*cellsize + k*cellsize + l*map_grid.numchunks.x*CHUNKSIZE*cellsize*cellsize;
+                                let alex_index = map_grid.getDataIndex(i,j,k,l);
+                                let color = Uint32data[alex_index];
+                                let finalcolor = ((color << 16)&0x00FF0000) | ((color)&0xFF00FF00) | ((color>>16)&0x000000FF);
+
+                                for (let a=0;a<cellsize;a++) {
+                                    for (let b=0;b<cellsize;b++) {
+                                        let relative_index = bmp_index + a + b*map_grid.numchunks.x*CHUNKSIZE*cellsize;
+                                        map_grid.dataview[relative_index] = finalcolor;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                map_grid.cellsize = cellsize;
+                // console.log(Date.now()-current);
                 resolve();
             });
         });
@@ -309,25 +382,23 @@ class AppWrapper extends React.Component {
             this.setState({tool_mode: change_to});
         }
 
-        this.changeColor = (blockid) => {
-            if (typeof blockid === 'string') {
-                let out_num = parseInt(blockid.substring(1), 16);
-                console.log(blockid.substring(1));
-                console.log(out_num);
+        this.changeColor = (color) => {
+            if (typeof color === 'string') {
+                let out_num = colorTo32Uint(color);
                 this.setState({color_selected: out_num});
             }
-            else if (typeof blockid === 'number') {
-                this.setState({color_selected: blockid});
+            else if (typeof color === 'number') {
+                this.setState({color_selected: color});
             }
             this.changeToolMode(DRAWTOOL);
         };
-        this.isSelected = (blockid) => {
-            if (typeof blockid === 'string') {
-                let out_num = parseInt(blockid.substring(1), 16);
+        this.isSelected = (color) => {
+            if (typeof color === 'string') {
+                let out_num = colorTo32Uint(color);
                 return (out_num===this.state.color_selected);
             }
-            else if (typeof blockid === 'number') {
-                return (blockid===this.state.color_selected)
+            else if (typeof color === 'number') {
+                return (color===this.state.color_selected);
             }
         };
 
@@ -400,7 +471,7 @@ class AppWrapper extends React.Component {
                     changeChunkLoc={this.changeChunkLoc}
                     changeColor={this.changeColor}
                 />
-                <Palette isSelected={this.isSelected} changeColor={this.changeColor}/>
+                <Palette isSelected={this.isSelected} changeColor={this.changeColor} color={this.state.color_selected}/>
                 <div className='drawer primary'>
                     {(this.state.show_stats)?(<div style={{position: `absolute`,right:`0.8vw`}}>
                         ({this.state.update.time}ms, avg: {Math.round(this.state.update.tot_time/this.state.update.num_updates)}ms, {this.state.update.num_updates} updates)
@@ -429,20 +500,26 @@ class AppWrapper extends React.Component {
                     <table
                         className={`download-wrapper`}
                         // onClick={() => this.fileDownload()}
-                    >
+                    ><tbody>
                         <tr>
-                            <p>from:&nbsp;</p><input defaultValue={"0"} type={"number"} style={{width:"35px"}} onChange={(e)=>this.setState({cxstart:parseInt(e.target.value)})}></input>
-                            <input defaultValue={"0"} type={"number"} style={{width:"35px"}} onChange={(e)=>this.setState({cystart:parseInt(e.target.value)})}></input>
+                            <td>
+                                <p>from:&nbsp;</p><input defaultValue={"0"} type={"number"} style={{width:"35px"}} onChange={(e)=>this.setState({cxstart:parseInt(e.target.value)})}></input>
+                                <input defaultValue={"0"} type={"number"} style={{width:"35px"}} onChange={(e)=>this.setState({cystart:parseInt(e.target.value)})}></input>
+                            </td>
                         </tr>
                         <tr>
-                            <p>to:&nbsp;</p><input defaultValue={"0"} type={"number"} style={{width:"35px"}} onChange={(e)=>this.setState({cxend:parseInt(e.target.value)})}></input>
-                            <input defaultValue={"0"} type={"number"} style={{width:"35px"}} onChange={(e)=>this.setState({cyend:parseInt(e.target.value)})}></input>
+                            <td>
+                                <p>to:&nbsp;</p><input defaultValue={"0"} type={"number"} style={{width:"35px"}} onChange={(e)=>this.setState({cxend:parseInt(e.target.value)})}></input>
+                                <input defaultValue={"0"} type={"number"} style={{width:"35px"}} onChange={(e)=>this.setState({cyend:parseInt(e.target.value)})}></input>
+                            </td>
                         </tr>
                         <tr>
-                            <p >Save PNG:</p>
-                            <div className={`download-button`} onClick={() => this.mapDownload()}><img src='save.png'/></div>
+                            <td>
+                                <p >Save PNG:</p>
+                                <div className={`download-button`} onClick={() => this.mapDownload()}><img src='save.png' alt='save'/></div>
+                            </td>
                         </tr>
-                    </table>
+                    </tbody></table>
                 </div>
             </div>
         )
@@ -457,7 +534,7 @@ class MapCanvas extends React.Component {
 
         this.lastdraw = 0;
 
-        this.scale = 16;
+        this.scale = 4;
         this.tempscale = this.scale;
 
         this.cellpos = {i:0,j:0,k:0,l:0};
@@ -473,22 +550,32 @@ class MapCanvas extends React.Component {
         this.cursorcurrent = new Vector2D(0,0);
         this.lmousedown = false;
         this.rmousedown = false;
+        this.mousepos = new Vector2D(0,0);
 
         this.canvas = null;
+        this.replacecanvas = null;
+
+        this.is_updating = false;
+        this.drawcache = [];
     }
+
 
     //Called after element's initialisation
     componentDidMount() { 
         this.canvas = this.canvasRef.current;
+        this.replacecanvas = document.createElement('canvas');
         this.map_grid = new Map();
-        setTimeout(this.updateCanvas(), 1000);
+        this.resizeCanvas(this.canvas);
+        window.addEventListener('resize', ()=>this.resizeCanvas(this.canvas));
+        setTimeout(this.updateCanvas(), UPDATEPERIOD);
     }
 
     getCursorPosition(event, canvas) {
         const rect = canvas.getBoundingClientRect();
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
-        const pos = new Vector2D(x,y);
+        const pos = new Vector2D(x/(this.tempscale/this.scale),y/(this.tempscale/this.scale));
+        this.mousepos = pos;
         return pos;
     }
 
@@ -507,100 +594,118 @@ class MapCanvas extends React.Component {
         this.props.changeOffsetLoc(this.celloffset);
     }
 
-    drawMap (canvas, startpoint) {
+    drawMap (canvas, startpoint, isupdate) {
         let start =  Date.now();
+        if (this.map_grid.data===null || this.map_grid.numchunks===null) return;
+        const cellsize = this.map_grid.cellsize;
 
-        // if (start < (this.lastdraw + 1000/60)) return; // Only drawing every 1/60th of a second
-        this.lastdraw = start;
+        let x,y;
+        let doFill = (i,j,k,l) => {
 
-        this.resizeCanvas(canvas);
+            x = (((i+startpoint.x)*CHUNKSIZE+k))*(cellsize)+mapoffset_x;
+            y = (((j+startpoint.y)*CHUNKSIZE+l))*(cellsize)+mapoffset_y;
+            ctx.fillRect(x, y, cellsize, cellsize);
+            // console.log(x,y,cellapparentsize);
+        }
+
+        let length = this.map_grid.numchunks.x*CHUNKSIZE*cellsize;
+        if ((this.map_grid.data.byteLength*4)%length!==0) return;
+        let imageData = new ImageData(new Uint8ClampedArray(this.map_grid.data), length);
+
+        const ctx = canvas.getContext("2d");
+
+        const rctx = this.replacecanvas.getContext("2d");
+        rctx.clearRect(0,0,this.replacecanvas.width, this.replacecanvas.height);
+        rctx.putImageData(imageData, 0, 0);
+
         const { width, height } = canvas.getBoundingClientRect();
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, width, height)
+        ctx.clearRect(0, 0, width, height);
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, width, height);
 
-        // finding location in terms of iterators of current cell
-        // let {cell_i, cell_j, cell_k, cell_l} = this.map_grid.getChunkPosOffset(this.currentcell, startpoint);
+        let mapoffset_x = Math.floor(this.mapoffset.x*cellsize);
+        let mapoffset_y = Math.floor(this.mapoffset.y*cellsize);
+        let offset_x = startpoint.x*CHUNKSIZE*cellsize+mapoffset_x;
+        let offset_y = startpoint.y*CHUNKSIZE*cellsize+mapoffset_y;
 
-        let blockid;
-        let x;
-        let y;
-
-        let mapoffset_x = Math.floor(this.mapoffset.x*this.scale);
-        let mapoffset_y = Math.floor(this.mapoffset.y*this.scale);
-        // let mapoffset_x = this.mapoffset.x;
-        // let mapoffset_y = this.mapoffset.y;
-
-        let doFill = (i,j,k,l) => {
-
-            x = (((i+startpoint.x)*CHUNKSIZE+k))*(this.scale)+mapoffset_x;
-            y = (((j+startpoint.y)*CHUNKSIZE+l))*(this.scale)+mapoffset_y;
-            if (x%1!==0||y%1!==0||this.scale%1!==0) console.log("ALERT:", x, y, this.scale);
-            ctx.fillRect(x, y, this.scale, this.scale);
-            // console.log(x,y,cellapparentsize);
-        }
-        if (this.map_grid.data === null) return;
-        // for map
-
-
-        let chunkbufferoffset = 0;
-
-        if (this.props.getDebugMode()) ctx.beginPath();
-        for (let i=0;i<this.map_grid.numchunks.x;i++) {
-            for (let j=0;j<this.map_grid.numchunks.y;j++) {
-                // for each chunk
-                if (this.props.getDebugMode()) {
-                    x = (((i+startpoint.x)*CHUNKSIZE))*(this.scale)+mapoffset_x;
-                    y = (((j+startpoint.y)*CHUNKSIZE))*(this.scale)+mapoffset_y;
-
-                    ctx.fillStyle = "#000000";
-                    ctx.lineWidth = 0.01*Math.floor(this.scale);
-                    ctx.moveTo(x, 0);
-                    ctx.lineTo(x, height);
-                    // ctx.stroke();
-                    ctx.moveTo(0, y);
-                    ctx.lineTo(width, y);
-                }
-                for (let c=0;c<(CHUNKSIZE*CHUNKSIZE);c++) {
-                    let k = Math.floor(c/CHUNKSIZE);
-                    let l = c-(k*CHUNKSIZE);
-                    
-                    blockid = this.map_grid.dataview[chunkbufferoffset+c];
-
-                    if (blockid!==16777215){
-                        // ctx.fillStyle = blockid.toString(16);
-                        ctx.fillStyle = "#" + (blockid & 0x00FFFFFF).toString(16).padStart(6, '0');
-                        // if (c===0) console.log((blockid & 0x00FFFFFF).toString(16).padStart(6, '0'))
-                        doFill(i,j,k,l,blockid);
+        {
+            ctx.drawImage(this.replacecanvas, offset_x, offset_y);
+            
+            if (this.props.getDebugMode()) {
+                ctx.beginPath();
+                for (let i=0;i<this.map_grid.numchunks.x;i++) {
+                    for (let j=0;j<this.map_grid.numchunks.y;j++) {
+                        x = (((i+startpoint.x)*CHUNKSIZE))*cellsize+mapoffset_x;
+                        y = (((j+startpoint.y)*CHUNKSIZE))*cellsize+mapoffset_y;
+    
+                        ctx.fillStyle = "#000000";
+                        ctx.lineWidth = 0.01*Math.floor(this.scale);
+                        ctx.moveTo(x, 0);
+                        ctx.lineTo(x, height);
+                        // ctx.stroke();
+                        ctx.moveTo(0, y);
+                        ctx.lineTo(width, y);
                     }
                 }
-                chunkbufferoffset += (CHUNKSIZE*CHUNKSIZE);
+                ctx.stroke();
             }
-        }
-        if (this.props.getDebugMode()) ctx.stroke();
 
-        if (this.props.toolmode===DRAWTOOL) {
-            ctx.fillStyle = "#"+(this.props.getColorSelected() & 0x00FFFFFF).toString(16).padStart(6, '0')+"ff";
-            doFill(this.cellpos.i,this.cellpos.j,this.cellpos.k,this.cellpos.l);
-        }
+            this.drawcache.forEach((linearray)=>{
+                linearray.forEach((line)=>{
+                    plotLine(line.p1, line.p2, line.offset, (x,y)=>{
+                        const currentpos = new Vector2D(x-line.offset.x,y-line.offset.y);
+                        const {i, j, k, l} = this.map_grid.getChunkPosOffset(currentpos, this.startpoint);
+                        ctx.fillStyle = colorToString(line.blockid);
+                        doFill(i, j, k, l);
+                    });
+                })
+            });
+
+            if (this.props.toolmode===DRAWTOOL) {
+                // doFill(this.cellpos);
+                ctx.fillStyle = colorToString(this.props.getColorSelected())+"ff";
+                doFill(this.cellpos.i, this.cellpos.j, this.cellpos.k, this.cellpos.l);
+            }
+        };
+
         this.props.changeDrawTime(Date.now()-start);
     }
 
     updateCanvas() {
         let start = Date.now(); // time testing
 
-        let {startpoint, numchunks} = this.map_grid.getValues(this.canvas, this.mapoffset.multipliedby(this.scale), this.scale);
+        let tempupdatescale = Math.floor(this.tempscale);
+
+        let {startpoint, numchunks} = this.map_grid.getValues(this.canvas, this.mapoffset.multipliedby(tempupdatescale), tempupdatescale);
         let linestosend = this.drawLines;
         this.drawLines = [];
-        this.map_grid.setMatrix(numchunks, startpoint, linestosend)
+        this.is_updating = true;
+        this.map_grid.setMatrix(numchunks, startpoint, linestosend, tempupdatescale)
         .then(()=>{
-            this.drawMap(this.canvas, startpoint);
+            
+
+            this.replacecanvas.width = tempupdatescale*numchunks.x*CHUNKSIZE;
+            this.replacecanvas.height = tempupdatescale*numchunks.y*CHUNKSIZE;    
+
+            // this.canvas.getContext('2d').resetTransform();
+            this.resizeCanvas(this.canvas);
+            this.canvasscale(this.canvas, this.tempscale/tempupdatescale, this.tempscale/tempupdatescale)
+            this.scale = Math.floor(this.tempscale)
             this.startpoint = startpoint;
+            this.drawMap(this.canvas, startpoint, true);
+
             this.props.changeUpdateTime(Date.now()-start);
+            this.is_updating = false;
+        }).then(()=>{
+            // this.drawcache.forEach((draw) => {draw()});
+            this.drawcache.push([]);
+            if (this.drawcache.length>4) {
+                this.drawcache.shift();
+            }
+            
         });
 
-        setTimeout(()=>{this.updateCanvas()}, 1000);
+        setTimeout(()=>{this.updateCanvas()}, UPDATEPERIOD);
     }
 
     // stolen code lmao
@@ -613,10 +718,22 @@ class MapCanvas extends React.Component {
           canvas.width = (1*width*ratio);
           canvas.height = (1*height*ratio);
           context.scale(ratio, ratio);
+        //   canvas.style.width = `${width}px`;
+        //   canvas.style.height = `${height}px`;
           return true;
         }
     
         return false
+    }
+
+    canvasscale(canvas, scalex, scaley) {
+        // let mousepos = this.mousepos;
+        const ctx = canvas.getContext('2d');
+        // const transx = mousepos.x;
+        // const transy = mousepos.y;
+        // ctx.translate(transx, transy);
+        ctx.scale(scalex, scaley);
+        // ctx.translate(-transx, -transy);
     }
 
     drawCellAtMouse(x,y) {
@@ -649,8 +766,18 @@ class MapCanvas extends React.Component {
     }
 
     drawLine(p1,p2) {
-        plotLine(p1, p2, this.celloffset, (x,y)=>this.drawCellAtMouse(x,y));
-        this.drawLines.push({p1:p1,p2:p2,offset:this.celloffset,blockid:this.props.getColorSelected()});
+        // let thisdraw = ()=>{plotLine(p1, p2, this.celloffset, (x,y)=>this.drawCellAtMouse(x,y))};
+        let thisdraw = ()=>{
+            let pixels = [];
+            plotLine(p1, p2, this.celloffset, (x,y)=>{pixels.push({x:x,y:y, blockid:this.props.getColorSelected()})});
+            return pixels;
+        };
+        // this.drawcache.push(thisdraw());
+        // thisdraw();
+        // if (this.is_updating) {this.drawcache.push(thisdraw)};
+        let drawobj = {p1:p1,p2:p2,offset:this.celloffset,blockid:this.props.getColorSelected()};
+        this.drawcache[this.drawcache.length-1].push(drawobj);
+        this.drawLines.push(drawobj);
     }
 
     render() {
@@ -664,7 +791,8 @@ class MapCanvas extends React.Component {
                     return "default";
             }
         }
-        return (
+        return (<div>
+            {/* <canvas ref={this.canvasRef2} style={{visibility:"hidden"}}></canvas> */}
             <canvas 
                 ref={this.canvasRef}
                 className='map-canvas primary'
@@ -714,14 +842,18 @@ class MapCanvas extends React.Component {
                 onWheel={(e) => {
                     let newscale = this.tempscale - Math.floor(e.deltaY)/1000;
                     // console.log(this.scale, this.tempscale);
+                    let oldtempscale = this.tempscale;
                     if (newscale>LOWESTSCALE) this.tempscale = newscale;
                     else this.tempscale = LOWESTSCALE;
                     let oldscale = this.scale;
-                    this.scale = Math.floor(this.tempscale);
+                    console.log(this.tempscale);
+                    const scalenum = this.tempscale/oldtempscale;
+                    this.canvasscale(this.canvas, scalenum, scalenum);
+                    // this.scale = Math.floor(this.tempscale);
                     
-                    if (oldscale!==this.scale) this.drawMap(this.canvas, this.startpoint);
+                    this.drawMap(this.canvas, this.startpoint);
                 }}
-            ></canvas>
+            ></canvas></div>
         )
     }
 }
@@ -740,17 +872,17 @@ class Palette extends React.Component {
         return (
             <div className='palette primary'>
                 {
-                    blocks.map(button => (
+                    colors.map((color,index) => (
                         <div 
-                            key={button.blockid} 
-                            style={{backgroundColor: `${button.imagesrc}`}} 
-                            className={`blockbutton` + (this.props.isSelected(button.imagesrc) ? "selected" : "")}
-                            onClick={() => {this.props.changeColor(button.imagesrc)}}
+                            key={index} 
+                            style={{backgroundColor: `${color}`}} 
+                            className={`blockbutton` + (this.props.isSelected(color) ? "selected" : "")}
+                            onClick={() => {this.props.changeColor(color);}}
                             //onClick={() => {console.log(button.blockid)}}
                             ></div>
                     ))
                 }
-                <input type={"color"} onChange={this.handleChange}></input>
+                <input value={this.props.color} type={"color"} onChange={this.handleChange} ></input>
                 {/* <input type={"submit"} value={"Apply"}></input> */}
         </div>
         )
