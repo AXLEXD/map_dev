@@ -267,7 +267,7 @@ class Map {
         return {startpoint, numchunks};
     }
 
-    async setMatrix(dimn, start, lines, cellsize) {
+    async setMatrix(dimn, start, lines, cellsize, changeTranscodeTime) {
 
         let coords = [];
         let map_grid = this;
@@ -316,7 +316,7 @@ class Map {
                     }
                 }
                 map_grid.cellsize = cellsize;
-                // console.log(Date.now()-current);
+                changeTranscodeTime(Date.now()-current);
                 resolve();
             });
         });
@@ -352,6 +352,11 @@ class AppWrapper extends React.Component {
             show_stats: true,
             color_selected: 1672153, 
             update: {
+                time: 0,
+                tot_time: 0,
+                num_updates: 1
+            },
+            transcode: {
                 time: 0,
                 tot_time: 0,
                 num_updates: 1
@@ -409,6 +414,13 @@ class AppWrapper extends React.Component {
                 num_updates: this.state.update.num_updates+1
             }});
         }
+        this.changeTranscodeTime = (new_time) => {
+            this.setState({transcode:{
+                time: new_time, 
+                tot_time: this.state.transcode.tot_time+new_time, 
+                num_updates: this.state.transcode.num_updates+1
+            }});
+        }
         this.changeDrawTime = (new_time) => {
             this.setState({draw:{
                 time: new_time, 
@@ -464,6 +476,7 @@ class AppWrapper extends React.Component {
                     changeToolMode={this.changeToolMode}
                     getDebugMode={this.getDebugMode}
                     changeUpdateTime={this.changeUpdateTime}
+                    changeTranscodeTime={this.changeTranscodeTime}
                     changeDrawTime={this.changeDrawTime}
                     getColorSelected={this.getColorSelected}
                     changeCursorLoc={this.changeCursorLoc}
@@ -475,6 +488,7 @@ class AppWrapper extends React.Component {
                 <div className='drawer primary'>
                     {(this.state.show_stats)?(<div style={{position: `absolute`,right:`0.8vw`}}>
                         ({this.state.update.time}ms, avg: {Math.round(this.state.update.tot_time/this.state.update.num_updates)}ms, {this.state.update.num_updates} updates)
+                        <br/>({this.state.transcode.time}ms, avg: {Math.round(this.state.transcode.tot_time/this.state.transcode.num_updates)}ms, {this.state.transcode.num_updates} transcodes);
                         <br/>({this.state.draw.time}ms, avg: {Math.round(this.state.draw.tot_time/this.state.draw.num_updates)}ms, {this.state.draw.num_updates} draws)
                         <br/>Cursor: ({this.state.cursorx},{this.state.cursory})
                         <br/>Offset: ({this.state.offsetx},{this.state.offsety})
@@ -680,7 +694,7 @@ class MapCanvas extends React.Component {
         let linestosend = this.drawLines;
         this.drawLines = [];
         this.is_updating = true;
-        this.map_grid.setMatrix(numchunks, startpoint, linestosend, tempupdatescale)
+        this.map_grid.setMatrix(numchunks, startpoint, linestosend, tempupdatescale, this.props.changeTranscodeTime)
         .then(()=>{
             
 
