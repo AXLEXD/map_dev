@@ -6,7 +6,7 @@ const UPDATEPERIOD = 1000;
 
 const CHUNKSIZE = 16;
 
-const LOWESTSCALE = 3;
+const LOWESTSCALE = 1;
 
 const DRAWTOOL = 0;
 const EYEDROPTOOL = 1;
