@@ -79,16 +79,15 @@ app.listen(PORT, () => {
   // serve.connection.connect();
 });
 
-serve.connection.on('')
 
-serve.connection.on("error", (err) => {
+serve.connection.on('error', (err) => {
     console.log("Caught server error: ");
     console.log(err.stack);
 });
-app.on("error", (err) => {
-  console.log("Caught server error: ");
-  console.log(err.stack);
-});
+// app.on("error", (err) => {
+//   console.log("Caught server error: ");
+//   console.log(err.stack);
+// });
 
 
 // app.on('ECONNRESET', function (err) {
