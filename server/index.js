@@ -82,7 +82,7 @@ app.get('*', (req, res) => {
   res.sendFile(path.resolve(__dirname, '../client/build', 'index.html'));
 });
 
-app.listen(PORT, "192.168.1.1",() => {
+app.listen(PORT,() => {
   console.log(`Server listening on ${PORT}`);
   // serve.connection.connect();
 });
