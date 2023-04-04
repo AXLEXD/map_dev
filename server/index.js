@@ -7,7 +7,7 @@ const cors = require("cors");
 const fs = require('fs');
 
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 2999;
 
 const app = express();
 
@@ -26,7 +26,7 @@ function doQueryCount() {
 }
 
 // Have Node serve the files for our built React app
-app.use(express.static(path.resolve(__dirname, '../client/build')));
+// app.use(express.static(path.resolve(__dirname, '../client/build')));
 
 // app.use(bodyParser.json());
 app.use(express.raw());
