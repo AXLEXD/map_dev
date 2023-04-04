@@ -3,7 +3,8 @@ const mapimage = require('./mapimage.js');
 
 const path = require('path');
 const express = require("express");
-const fs = require('fs')
+// const cors = require("cors");
+const fs = require('fs');
 
 
 const PORT = process.env.PORT || 3001;
@@ -30,8 +31,15 @@ function doQueryCount() {
 // app.use(bodyParser.json());
 app.use(express.raw());
 app.use(express.json({limit: '50mb'}));
+// app.use(cors({'origin':'*'}));
 // app.use(express.urlencoded({limit: '50mb'}));
 // app.use(bodyParser.urlencoded({ extended: false }))
+
+
+app.get("/test", (req, res) => {
+  console.log("connection");
+  res.json({message:"hi"});
+})
 
 app.post("/getchunks", (req, res) => {
   // doQueryCount();
@@ -74,7 +82,7 @@ app.get('*', (req, res) => {
   res.sendFile(path.resolve(__dirname, '../client/build', 'index.html'));
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, "192.168.1.1",() => {
   console.log(`Server listening on ${PORT}`);
   // serve.connection.connect();
 });
