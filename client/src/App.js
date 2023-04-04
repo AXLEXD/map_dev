@@ -1,5 +1,5 @@
 import './App.css';
-import React, { createRef } from 'react';
+import React, { createRef, useRef } from 'react';
 
 
 const UPDATEPERIOD = 1000;
@@ -244,8 +244,14 @@ class Vector2D {
 class Map {
     constructor() {
         // this.canvasdimensions = new Vector2D(w,h); // establishing at start means no resizing canvas element
+        //the data returned by the server
         this.data = null;
+        //the data formatted as an image bitmap
+        this.image = null;
+
         this.dataview = null;
+        this.imageview = null;
+
         this.numchunks = null;
         this.cellsize = 2;
     }
@@ -291,8 +297,11 @@ class Map {
                 let current = Date.now();
 
                 // const cellsize = 10;
-                map_grid.data = new ArrayBuffer(chunkbuffer.byteLength*cellsize*cellsize);
+                map_grid.data = chunkbuffer;
                 map_grid.dataview = new Uint32Array(map_grid.data);
+
+                map_grid.image = new ArrayBuffer(chunkbuffer.byteLength*cellsize*cellsize);
+                map_grid.imageview = new Uint32Array(map_grid.image);
 
                 let Uint32data = new Uint32Array(chunkbuffer);
                 
@@ -308,7 +317,7 @@ class Map {
                                 for (let a=0;a<cellsize;a++) {
                                     for (let b=0;b<cellsize;b++) {
                                         let relative_index = bmp_index + a + b*map_grid.numchunks.x*CHUNKSIZE*cellsize;
-                                        map_grid.dataview[relative_index] = finalcolor;
+                                        map_grid.imageview[relative_index] = finalcolor;
                                     }
                                 }
                             }
@@ -332,11 +341,6 @@ class Map {
 
         return {i, j, k, l};
     }
-
-    addCell(index,colorhex) {
-        this.dataview[index] = colorhex;
-        // console.log(data[index], colorhex);
-    }
     getDataIndex(i,j,k,l) {
         return i*(this.numchunks.y)*(CHUNKSIZE*CHUNKSIZE)+j*(CHUNKSIZE*CHUNKSIZE)+k*CHUNKSIZE+l;
     }
@@ -351,6 +355,7 @@ class AppWrapper extends React.Component {
             debug_mode: false,
             show_stats: true,
             color_selected: 1672153, 
+            stroke_radius:1,
             update: {
                 time: 0,
                 tot_time: 0,
@@ -379,6 +384,8 @@ class AppWrapper extends React.Component {
             cyend:0
         };
 
+        this.strokecanvasRef = createRef();
+
         this.getColorSelected = () => {return this.state.color_selected};
         this.getDebugMode = () => {return this.state.debug_mode};
         this.getToolMode = () => {return this.state.tool_mode};
@@ -388,14 +395,11 @@ class AppWrapper extends React.Component {
         }
 
         this.changeColor = (color) => {
-            if (typeof color === 'string') {
-                let out_num = colorTo32Uint(color);
-                this.setState({color_selected: out_num});
-            }
-            else if (typeof color === 'number') {
+            if (typeof color === 'number') {
                 this.setState({color_selected: color});
-            }
+            } else throw "penis";
             this.changeToolMode(DRAWTOOL);
+            this.drawStrokeCanvas(color);
         };
         this.isSelected = (color) => {
             if (typeof color === 'string') {
@@ -441,6 +445,23 @@ class AppWrapper extends React.Component {
 
     componentDidMount() {
         document.body.style.overflow = "hidden"; // stops user from scrolling the page
+        this.strokecanvas = this.strokecanvasRef.current;
+        this.drawStrokeCanvas();
+    }
+
+    drawStrokeCanvas(color) {
+        const cellsize = 50;
+        const size = (this.state.stroke_radius+2)*cellsize;
+        this.strokecanvas.width = size;
+        this.strokecanvas.height = size;
+
+        const ctx = this.strokecanvas.getContext('2d');
+        ctx.clearRect(0,0,this.strokecanvas.width,this.strokecanvas.height);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0,0,this.strokecanvas.width,this.strokecanvas.height);
+
+        ctx.fillStyle = colorToString(color);
+        ctx.fillRect(cellsize, cellsize, cellsize,cellsize);
     }
 
     mapDownload() {
@@ -534,6 +555,8 @@ class AppWrapper extends React.Component {
                             </td>
                         </tr>
                     </tbody></table>
+                    <canvas ref={this.strokecanvasRef} style={{width:"10vmin",height:"10vmin"}}></canvas>
+                    {/* <div style={{width:"100px", height:"100px", backgroundColor:colorToString(this.state.color_selected)}}></div> */}
                 </div>
             </div>
         )
@@ -610,7 +633,7 @@ class MapCanvas extends React.Component {
 
     drawMap (canvas, startpoint, isupdate) {
         let start =  Date.now();
-        if (this.map_grid.data===null || this.map_grid.numchunks===null) return;
+        if (this.map_grid.image===null || this.map_grid.numchunks===null) return;
         const cellsize = this.map_grid.cellsize;
 
         let x,y;
@@ -623,8 +646,8 @@ class MapCanvas extends React.Component {
         }
 
         let length = this.map_grid.numchunks.x*CHUNKSIZE*cellsize;
-        if ((this.map_grid.data.byteLength*4)%length!==0) return;
-        let imageData = new ImageData(new Uint8ClampedArray(this.map_grid.data), length);
+        if ((this.map_grid.image.byteLength*4)%length!==0) return;
+        let imageData = new ImageData(new Uint8ClampedArray(this.map_grid.image), length);
 
         const ctx = canvas.getContext("2d");
 
@@ -635,7 +658,7 @@ class MapCanvas extends React.Component {
         const { width, height } = canvas.getBoundingClientRect();
         ctx.clearRect(0, 0, width, height);
         ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, width, height);
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         let mapoffset_x = Math.floor(this.mapoffset.x*cellsize);
         let mapoffset_y = Math.floor(this.mapoffset.y*cellsize);
@@ -750,13 +773,13 @@ class MapCanvas extends React.Component {
         // ctx.translate(-transx, -transy);
     }
 
-    drawCellAtMouse(x,y) {
-        const currentpos = new Vector2D(x-this.celloffset.x,y-this.celloffset.y);
+    // drawCellAtMouse(x,y) {
+    //     const currentpos = new Vector2D(x-this.celloffset.x,y-this.celloffset.y);
 
-        let {i, j, k, l} = this.map_grid.getChunkPosOffset(currentpos, this.startpoint);
-        let dataindex = this.map_grid.getDataIndex(i,j,k,l);
-        if (dataindex < this.map_grid.data.byteLength/4) this.map_grid.addCell(dataindex, this.props.getColorSelected());
-    }
+    //     let {i, j, k, l} = this.map_grid.getChunkPosOffset(currentpos, this.startpoint);
+    //     let dataindex = this.map_grid.getDataIndex(i,j,k,l);
+    //     if (dataindex < this.map_grid.image.byteLength/4) this.map_grid.addCell(dataindex, this.props.getColorSelected());
+    // }
 
     moveCursor(event) {
         let update = false;
@@ -891,12 +914,12 @@ class Palette extends React.Component {
                             key={index} 
                             style={{backgroundColor: `${color}`}} 
                             className={`blockbutton` + (this.props.isSelected(color) ? "selected" : "")}
-                            onClick={() => {this.props.changeColor(color);}}
+                            onClick={() => {this.props.changeColor(colorTo32Uint(color))}}
                             //onClick={() => {console.log(button.blockid)}}
                             ></div>
                     ))
                 }
-                <input value={this.props.color} type={"color"} onChange={this.handleChange} ></input>
+                <input style={{width:"100px", border:"none"}}value={this.props.color} type={"color"} onChange={this.handleChange} ></input>
                 {/* <input type={"submit"} value={"Apply"}></input> */}
         </div>
         )

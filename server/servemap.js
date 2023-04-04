@@ -135,7 +135,7 @@ function readChunk(coordslist, ip) {
 
     return new Promise(function(resolve, reject) {
         connection.query(SQLQuery2, (err, rows, fields) => {
-            if (err) throw err;
+            if (err) console.log(err);
             let querytime = Date.now();
 
             // make buffer
@@ -380,7 +380,7 @@ function writeLines(lines, userip) {
 
     let getChunksQuery = new Promise(function(resolve, reject) {
         connection.query(SQLQuery1, (err, rows, fields) => {
-            if (err) throw err;
+            if (err) console.log(err);
             // console.log(rows);
             rows.forEach(item => {
                 let chunkindex = item.coord;
@@ -408,7 +408,7 @@ function writeLines(lines, userip) {
     return getChunksQuery.then((SQLQuery2)=> {
         // console.log(SQLQuery2);
         let result = connection.query(SQLQuery2, (err, rows, fields) => {
-            if (err) throw err;
+            if (err) console.log(err);
             // console.log(`Returning ${JSON.stringify(result)}`);
         });
         return Boolean(result);
