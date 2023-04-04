@@ -285,7 +285,7 @@ class Map {
             }
         }
         return new Promise(function(resolve, reject) {
-            fetch('localhost:3001/getchunks',{
+            fetch(`${window.location.href}:3001/getchunks`,{
                 method: 'POST',
                 headers: {'Accept': 'application/octet-stream', 'Content-Type': 'application/json'},
                 body: JSON.stringify({coords:coords, lines:lines})
@@ -469,7 +469,7 @@ class AppWrapper extends React.Component {
         let coordsobj = {x1:this.state.cxstart,y1:this.state.cystart,x2:this.state.cxend,y2:this.state.cyend};
         if (coordsobj.x1===coordsobj.x2 || coordsobj.y1===coordsobj.y2 || coordsobj.x1>coordsobj.x2 || coordsobj.y1>coordsobj.y2) return;
 
-        fetch('localhost:3001/getimage',{
+        fetch(`${window.location.href}:3001/getimage`,{
             method: 'POST',
             headers: {'Accept': 'application/octet-stream', 'Content-Type': 'application/json'},
             body: JSON.stringify(coordsobj)
