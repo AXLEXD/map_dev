@@ -558,7 +558,7 @@ class AppWrapper extends React.Component {
                         </tr>
                     </tbody></table>
                     <canvas ref={this.strokecanvasRef} style={{width:"10vmin",height:"10vmin"}}></canvas>
-                    <input style={{height:"40px", width:"40px", border:"none"}}value={this.props.color} type={"color"} onChange={this.handleChange} ></input>
+                    <input style={{height:"40px", width:"40px", border:"none"}}value={this.props.color} type={"color"} onChange={(e)=>{this.changeColor(colorTo32Uint(e.target.value))}}></input>
                     {/* <div style={{width:"100px", height:"100px", backgroundColor:colorToString(this.state.color_selected)}}></div> */}
                 </div>
             </div>
