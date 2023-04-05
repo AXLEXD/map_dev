@@ -2,11 +2,12 @@
 const common = require('./common.js');
 
 const mysql = require('mysql');
-const connection = mysql.createConnection({
-  host: '127.0.0.1',
-  user: 'nodeserver',
-  password: 'nodeserver',
-  database: 'new_db'
+const pool = mysql.createPool({
+    connectionLimit : 10,
+    host: '127.0.0.1',
+    user: 'nodeserver',
+    password: 'nodeserver',
+    database: 'new_db'
 });
 
 const tablename = 'chunks';
@@ -18,6 +19,26 @@ const userip_col  = 'userip';
 const chunksize = 16;
 const cellsize = 8;
 
+
+
+function executeQuery(query,callback) {
+    pool.getConnection(function(err,connection){
+        if (err) {
+          connection.release();
+          throw err;
+        }   
+        connection.query(query,function(err,rows){
+            connection.release();
+            if(!err) {
+                callback(null, rows);
+            }
+        });
+        connection.on('error', function(err) {
+              throw err;
+              return;     
+        });
+    });
+}
 
 function convert(oldconnection) {
 
@@ -134,7 +155,7 @@ function readChunk(coordslist, ip) {
     const SQLQuery2 = `SELECT * FROM ${tablename} WHERE` + generalscondition;
 
     return new Promise(function(resolve, reject) {
-        connection.query(SQLQuery2, (err, rows, fields) => {
+        executeQuery(SQLQuery2, (err, rows) => {
             if (err) console.log(err);
             let querytime = Date.now();
 
@@ -379,7 +400,7 @@ function writeLines(lines, userip) {
     // console.log(SQLQuery1);
 
     let getChunksQuery = new Promise(function(resolve, reject) {
-        connection.query(SQLQuery1, (err, rows, fields) => {
+        executeQuery(SQLQuery1, (err, rows) => {
             if (err) console.log(err);
             // console.log(rows);
             rows.forEach(item => {
@@ -407,7 +428,7 @@ function writeLines(lines, userip) {
     
     return getChunksQuery.then((SQLQuery2)=> {
         // console.log(SQLQuery2);
-        let result = connection.query(SQLQuery2, (err, rows, fields) => {
+        let result = executeQuery(SQLQuery2, (err, rows) => {
             if (err) console.log(err);
             // console.log(`Returning ${JSON.stringify(result)}`);
         });

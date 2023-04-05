@@ -1,5 +1,5 @@
 import './App.css';
-import React, { createRef, useRef } from 'react';
+import React, { createRef } from 'react';
 
 
 const UPDATEPERIOD = 1000;
@@ -7,6 +7,8 @@ const UPDATEPERIOD = 1000;
 const CHUNKSIZE = 16;
 
 const LOWESTSCALE = 3;
+
+const STARTSCALE = 5;
 
 const DRAWTOOL = 0;
 const EYEDROPTOOL = 1;
@@ -395,9 +397,7 @@ class AppWrapper extends React.Component {
         }
 
         this.changeColor = (color) => {
-            if (typeof color === 'number') {
-                this.setState({color_selected: color});
-            } else throw "penis";
+            this.setState({color_selected: color});
             this.changeToolMode(DRAWTOOL);
             this.drawStrokeCanvas(color);
         };
@@ -556,6 +556,7 @@ class AppWrapper extends React.Component {
                         </tr>
                     </tbody></table>
                     <canvas ref={this.strokecanvasRef} style={{width:"10vmin",height:"10vmin"}}></canvas>
+                    <input style={{height:"40px", width:"40px", border:"none"}}value={this.props.color} type={"color"} onChange={this.handleChange} ></input>
                     {/* <div style={{width:"100px", height:"100px", backgroundColor:colorToString(this.state.color_selected)}}></div> */}
                 </div>
             </div>
@@ -571,7 +572,7 @@ class MapCanvas extends React.Component {
 
         this.lastdraw = 0;
 
-        this.scale = 4;
+        this.scale = STARTSCALE;
         this.tempscale = this.scale;
 
         this.cellpos = {i:0,j:0,k:0,l:0};
@@ -919,8 +920,6 @@ class Palette extends React.Component {
                             ></div>
                     ))
                 }
-                <input style={{width:"100px", border:"none"}}value={this.props.color} type={"color"} onChange={this.handleChange} ></input>
-                {/* <input type={"submit"} value={"Apply"}></input> */}
         </div>
         )
     }
