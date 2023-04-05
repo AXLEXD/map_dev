@@ -441,4 +441,4 @@ function writeLines(lines, userip) {
 
 
 
-module.exports =  {readChunk, writeLines, connection};
+module.exports =  {readChunk, writeLines, pool};

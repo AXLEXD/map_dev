@@ -88,10 +88,10 @@ app.listen(PORT,() => {
 });
 
 
-serve.connection.on('error', (err) => {
-    console.log("Caught server error: ");
-    console.log(err.stack);
-});
+// serve.connection.on('error', (err) => {
+//     console.log("Caught server error: ");
+//     console.log(err.stack);
+// });
 // app.on("error", (err) => {
 //   console.log("Caught server error: ");
 //   console.log(err.stack);
