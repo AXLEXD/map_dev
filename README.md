@@ -8,9 +8,7 @@ Link to the page in action here: [Pixel Canvas](http://devo.esz.us).
 ✔️ Encapsulate all line draws into a single call that is sent to the server on the update tick
 
 ✔️ Add guidelines showing the chunk borders
-
 ✔️ Add UI to download image of a range of chunks 
-
 ✔️ Add color picker
 
 - Add stroke radius options
