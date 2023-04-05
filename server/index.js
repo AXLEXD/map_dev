@@ -51,6 +51,7 @@ app.post("/getchunks", (req, res) => {
   // console.log(req.body);
 
   serve.writeLines(linelist, ip).then((result)=>{
+    // console.log(result);
     if (result) console.log(`\x1b[1m\x1b[32m# DRAW # : (${Date.now()-current}ms) Drew ${linelist.length} lines for  user ${ip}\x1b[0m`);
   })
   .then(()=>{return serve.readChunk(coordslist, ip)})

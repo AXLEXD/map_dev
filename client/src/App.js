@@ -387,7 +387,11 @@ class AppWrapper extends React.Component {
             cyend:0
         };
 
+        this.strokecanvas = null;
+        this.colorinput = null;
+
         this.strokecanvasRef = createRef();
+        this.colorInputRef = createRef();
 
         this.getColorSelected = () => {return this.state.color_selected};
         this.getDebugMode = () => {return this.state.debug_mode};
@@ -400,6 +404,7 @@ class AppWrapper extends React.Component {
         this.changeColor = (color) => {
             this.setState({color_selected: color});
             this.changeToolMode(DRAWTOOL);
+            this.colorinput.value = colorToString(color);
             this.drawStrokeCanvas(color);
         };
         this.isSelected = (color) => {
@@ -447,6 +452,7 @@ class AppWrapper extends React.Component {
     componentDidMount() {
         document.body.style.overflow = "hidden"; // stops user from scrolling the page
         this.strokecanvas = this.strokecanvasRef.current;
+        this.colorinput = this.colorInputRef.current;
         this.drawStrokeCanvas();
     }
 
@@ -558,7 +564,7 @@ class AppWrapper extends React.Component {
                         </tr>
                     </tbody></table>
                     <canvas ref={this.strokecanvasRef} style={{width:"10vmin",height:"10vmin"}}></canvas>
-                    <input style={{height:"40px", width:"40px", border:"none"}}value={this.props.color} type={"color"} onChange={(e)=>{this.changeColor(colorTo32Uint(e.target.value))}}></input>
+                    <input ref={this.colorInputRef} style={{height:"40px", width:"40px", border:"none"}} value={this.props.color} type={"color"} onChange={(e)=>{this.changeColor(colorTo32Uint(e.target.value))}}></input>
                     {/* <div style={{width:"100px", height:"100px", backgroundColor:colorToString(this.state.color_selected)}}></div> */}
                 </div>
             </div>

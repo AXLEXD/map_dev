@@ -3,7 +3,7 @@ const common = require('./common.js');
 
 const mysql = require('mysql');
 const pool = mysql.createPool({
-    connectionLimit : 10,
+    connectionLimit : 1,
     host: '127.0.0.1',
     user: 'nodeserver',
     password: 'nodeserver',
@@ -428,12 +428,10 @@ function writeLines(lines, userip) {
     
     return getChunksQuery.then((SQLQuery2)=> {
         // console.log(SQLQuery2);
-        let result = executeQuery(SQLQuery2, (err, rows) => {
+        executeQuery(SQLQuery2, (err, rows) => {
             if (err) console.log(err);
-            // console.log(`Returning ${JSON.stringify(result)}`);
         });
-        return Boolean(result);
-        
+        return true;
     });
 }
 
