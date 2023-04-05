@@ -287,7 +287,8 @@ class Map {
             }
         }
         return new Promise(function(resolve, reject) {
-            fetch(`${window.location.protocol + '//' + window.location.hostname}:2999/getchunks`,{
+            // fetch(`${window.location.protocol + '//' + window.location.hostname}:2999/getchunks`,{
+            fetch(`/getchunks`,{
                 method: 'POST',
                 headers: {'Accept': 'application/octet-stream', 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
                 body: JSON.stringify({coords:coords, lines:lines})
@@ -469,7 +470,8 @@ class AppWrapper extends React.Component {
         let coordsobj = {x1:this.state.cxstart,y1:this.state.cystart,x2:this.state.cxend,y2:this.state.cyend};
         if (coordsobj.x1===coordsobj.x2 || coordsobj.y1===coordsobj.y2 || coordsobj.x1>coordsobj.x2 || coordsobj.y1>coordsobj.y2) return;
 
-        fetch(`${window.location.protocol + '//' + window.location.hostname}:2999/getimage`,{
+        // fetch(`${window.location.protocol + '//' + window.location.hostname}:2999/getimage`,{
+        fetch(`/getimage`,{
             method: 'POST',
             headers: {'Accept': 'application/octet-stream', 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
             body: JSON.stringify(coordsobj)
@@ -657,7 +659,7 @@ class MapCanvas extends React.Component {
         rctx.putImageData(imageData, 0, 0);
 
         const { width, height } = canvas.getBoundingClientRect();
-        ctx.clearRect(0, 0, width, height);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -725,7 +727,7 @@ class MapCanvas extends React.Component {
             this.replacecanvas.width = tempupdatescale*numchunks.x*CHUNKSIZE;
             this.replacecanvas.height = tempupdatescale*numchunks.y*CHUNKSIZE;    
 
-            // this.canvas.getContext('2d').resetTransform();
+            this.canvas.getContext('2d').resetTransform();
             this.resizeCanvas(this.canvas);
             this.canvasscale(this.canvas, this.tempscale/tempupdatescale, this.tempscale/tempupdatescale)
             this.scale = Math.floor(this.tempscale)
@@ -756,6 +758,7 @@ class MapCanvas extends React.Component {
           canvas.width = (1*width*ratio);
           canvas.height = (1*height*ratio);
           context.scale(ratio, ratio);
+          console.log(ratio);
         //   canvas.style.width = `${width}px`;
         //   canvas.style.height = `${height}px`;
           return true;
