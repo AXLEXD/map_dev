@@ -8,7 +8,7 @@ const CHUNKSIZE = 16;
 
 const LOWESTSCALE = 3;
 
-const STARTSCALE = 5;
+const STARTSCALE = 16;
 
 const DRAWTOOL = 0;
 const EYEDROPTOOL = 1;
@@ -659,6 +659,7 @@ class MapCanvas extends React.Component {
         let imageData = new ImageData(new Uint8ClampedArray(this.map_grid.image), length);
 
         const ctx = canvas.getContext("2d");
+        ctx.imageSmoothingEnabled = false;
 
         const rctx = this.replacecanvas.getContext("2d");
         rctx.clearRect(0,0,this.replacecanvas.width, this.replacecanvas.height);
@@ -717,7 +718,7 @@ class MapCanvas extends React.Component {
         this.props.changeDrawTime(Date.now()-start);
     }
 
-    updateCanvas() {
+    async updateCanvas() {
         let start = Date.now(); // time testing
 
         let tempupdatescale = Math.floor(this.tempscale);
@@ -725,11 +726,8 @@ class MapCanvas extends React.Component {
         let {startpoint, numchunks} = this.map_grid.getValues(this.canvas, this.mapoffset.multipliedby(tempupdatescale), tempupdatescale);
         let linestosend = this.drawLines;
         this.drawLines = [];
-        this.is_updating = true;
         this.map_grid.setMatrix(numchunks, startpoint, linestosend, tempupdatescale, this.props.changeTranscodeTime)
         .then(()=>{
-            
-
             this.replacecanvas.width = tempupdatescale*numchunks.x*CHUNKSIZE;
             this.replacecanvas.height = tempupdatescale*numchunks.y*CHUNKSIZE;    
 
@@ -741,7 +739,6 @@ class MapCanvas extends React.Component {
             this.drawMap(this.canvas, startpoint, true);
 
             this.props.changeUpdateTime(Date.now()-start);
-            this.is_updating = false;
         }).then(()=>{
             // this.drawcache.forEach((draw) => {draw()});
             this.drawcache.push([]);
@@ -819,9 +816,7 @@ class MapCanvas extends React.Component {
             plotLine(p1, p2, this.celloffset, (x,y)=>{pixels.push({x:x,y:y, blockid:this.props.getColorSelected()})});
             return pixels;
         };
-        // this.drawcache.push(thisdraw());
-        // thisdraw();
-        // if (this.is_updating) {this.drawcache.push(thisdraw)};
+        
         let drawobj = {p1:p1,p2:p2,offset:this.celloffset,blockid:this.props.getColorSelected()};
         this.drawcache[this.drawcache.length-1].push(drawobj);
         this.drawLines.push(drawobj);
