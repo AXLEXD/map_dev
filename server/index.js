@@ -62,7 +62,7 @@ app.post("/getchunks", cors(corsOptions), (req, res) => {
       // console.log(result);
       if (result) console.log(`\x1b[1;32m# DRAW # : (${Date.now()-current}ms) Drew ${linelist.length} lines for  user ${ip}\x1b[0m`);
     })
-    .then(()=>{return serve.readChunk(coordslist, ip)})
+    .then(()=>{return serve.readChunk(coordslist, ip).catch((err) => {console.log(err)})})
     .then((readchunks) => {
       // console.log(req.accepts("octet-stream"));
       res.set('Content-Type', 'application/octet-stream');
