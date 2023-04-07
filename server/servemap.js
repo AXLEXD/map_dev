@@ -216,35 +216,39 @@ function readChunk(coordslist, ip) {
 
 function writeLines(lines, userip) {
 
-    if (typeof lines === 'undefined') throw Error("fuck you");
-
-    const invalids = [
-        lines.constructor.name !== "Array",
-        // lines.length === 0,
-        lines.length >= MAX_LINES,
-        (() => {
-            let valid = 0;
-            lines.forEach((line) => {
-                valid += (
-                    typeof line.p1.x !== 'number'
-                    || typeof line.p1.y !== 'number'
-                    || typeof line.p2.x !== 'number'
-                    || typeof line.p2.y !== 'number'
-                    || typeof line.offset.x !== 'number'
-                    || typeof line.offset.y !== 'number'
-                    || typeof line.blockid !== 'number'
-                    || line.blockid < 0
-                    || line.blockid > 16777215
-                ) ? 1 : 0;
-            })
-            return (valid !== 0);
-        })()
-    ]
-    // console.log(requirements);
-    const invalid_input = Boolean(invalids.reduce((partialSum, a) => partialSum + a, 0));
+    if (typeof lines !== 'object') return new Promise(function(resolve, reject) {resolve(false)});
+    try {
+        const invalids = [
+            lines.constructor.name !== "Array",
+            // lines.length === 0,
+            lines.length >= MAX_LINES,
+            (() => {
+                let valid = 0;
+                lines.forEach((line) => {
+                    valid += (
+                        typeof line.p1.x !== 'number'
+                        || typeof line.p1.y !== 'number'
+                        || typeof line.p2.x !== 'number'
+                        || typeof line.p2.y !== 'number'
+                        || typeof line.offset.x !== 'number'
+                        || typeof line.offset.y !== 'number'
+                        || typeof line.blockid !== 'number'
+                        || line.blockid < 0
+                        || line.blockid > 16777215
+                    ) ? 1 : 0;
+                })
+                return (valid !== 0);
+            })()
+        ]
+        // console.log(requirements);
+        const invalid_input = Boolean(invalids.reduce((partialSum, a) => partialSum + a, 0));
+        
+        if (invalid_input) return new Promise(function(resolve, reject) {reject(`\x1b[1;invalids:[${invalids}]\nERROR: INCORRECT FORMAT IN lines:\n${JSON.stringify(lines)}\x1b[0m`)});
+        if (lines.length === 0) return new Promise(function(resolve, reject) {resolve(false)});
+    } catch (err) {
+        return new Promise(function(resolve, reject) {reject(`\x1b[1;ERROR:\n${JSON.stringify(err)}\x1b[0m`)});
+    }
     
-    if (invalid_input) return new Promise(function(resolve, reject) {reject(`\x1b[1;invalids:[${invalids}]\nERROR: INCORRECT FORMAT IN lines:\n${JSON.stringify(lines)}\x1b[0m`)});
-    if (lines.length === 0) return new Promise(function(resolve, reject) {resolve(false)});
 
     let modchunks = {};
 
