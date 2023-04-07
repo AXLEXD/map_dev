@@ -68,8 +68,8 @@ app.post("/getchunks", cors(corsOptions), (req, res) => {
       res.set('Content-Type', 'application/octet-stream');
       // console.log(readchunks);
       res.end(readchunks);
-    }).catch((err)=>{
-      console.log(err);
+    }).catch((result)=>{
+      console.log(result);
     });
   } catch (err) {
     console.log(err);
@@ -88,8 +88,8 @@ app.post("/getimage", cors(corsOptions), (req, res) => {
       let filename = `(${coordsobj.x1},${coordsobj.y1})-(${coordsobj.x2},${coordsobj.y2})_${new Date().toTimeString().split(" ")[0].replace(":","_")}.png`;
       res.set('Content-disposition', `attachment; filename="${filename}"`);
       stream.pipe(res);
-    }).catch((err)=>{
-      console.log(err);
+    }).catch((result)=>{
+      console.log(result);
     });
   } catch (err) {
     console.log(err);

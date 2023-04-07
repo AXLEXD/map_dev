@@ -162,6 +162,7 @@ function convert(oldconnection) {
 
 function readChunk(coordslist, ip) {
 
+    if (typeof coordslist.length !== 'object') return new Promise(function(resolve, reject) {reject(`\x1b[1;ERROR: got no coords. coordslist:\n${JSON.stringify(coordslist)}\x1b[0m`)});
     if (coordslist.length >= MAX_READ_CHUNKS) return new Promise(function(resolve, reject) {resolve(new Buffer.alloc(0))});
 
     let start  = Date.now();
