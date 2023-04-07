@@ -268,7 +268,7 @@ function writeLines(lines, userip) {
     const conditions = (() => {
         let concatenatedString = ''; 
         for (let i = 0; i < modchunksvalues.length; i++) {
-            concatenatedString += `${(i===0) ? `` : ` OR`} ${coords_col} = \"${modchunksvalues[i].coord}\"`;
+            concatenatedString += `${(i===0) ? `` : ` OR`} ${coords_col} = \"${mysql.escape(modchunksvalues[i].coord)}\"`;
         } return concatenatedString;
     })();
     const SQLQuery1 = `SELECT * FROM ${tablename} WHERE` + conditions;
@@ -292,7 +292,7 @@ function writeLines(lines, userip) {
             const values = (() => {
                 let concatenatedString = '';
                 for (let i = 0; i < modchunksvalues.length; i++) {
-                    concatenatedString += ` (\"${modchunksvalues[i].coord}\", \"${userip}\", x\'${modchunksvalues[i].chunkdata.toString('hex')}\')${(i===modchunksvalues.length-1) ? ";" : ","}`;
+                    concatenatedString += ` (\"${mysql.escape(modchunksvalues[i].coord)}\", \"${mysql.escape(userip)}\", x\'${mysql.escape(modchunksvalues[i].chunkdata.toString('hex'))}\')${(i===modchunksvalues.length-1) ? ";" : ","}`;
                 }
                 return concatenatedString;
             })();

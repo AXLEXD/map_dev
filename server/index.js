@@ -3,7 +3,6 @@ const mapimage = require('./mapimage.js');
 
 const path = require('path');
 const express = require("express");
-const cors = require("cors");
 const fs = require('fs');
 
 
@@ -31,7 +30,6 @@ app.use(express.static(path.resolve(__dirname, '../client/build')));
 // app.use(bodyParser.json());
 app.use(express.raw());
 app.use(express.json({limit: '50mb'}));
-app.use(cors());
 // app.use(express.urlencoded({limit: '50mb'}));
 // app.use(bodyParser.urlencoded({ extended: false }))
 
