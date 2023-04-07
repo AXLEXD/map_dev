@@ -216,6 +216,8 @@ function readChunk(coordslist, ip) {
 
 function writeLines(lines, userip) {
 
+    if (typeof lines === 'undefined') throw Error("fuck you");
+
     const invalids = [
         lines.constructor.name !== "Array",
         // lines.length === 0,
