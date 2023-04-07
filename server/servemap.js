@@ -10,12 +10,12 @@ const pool = mysql.createPool({
     database: 'new_db'
 });
 
-pool.on('acquire', function (connection) {
-    console.log('Connection %d acquired', connection.threadId);
-});
-pool.on('release', function (connection) {
-    console.log('Connection %d released', connection.threadId);
-});
+// pool.on('acquire', function (connection) {
+//     console.log('Connection %d acquired', connection.threadId);
+// });
+// pool.on('release', function (connection) {
+//     console.log('Connection %d released', connection.threadId);
+// });
 
 const tablename = 'chunks';
 const coords_col  = 'coord';
@@ -167,6 +167,7 @@ function readChunk(coordslist, ip) {
     let start  = Date.now();
     const generalscondition = (() => {let concatenatedString = ''; for (let i = 0; i < coordslist.length; i++) {concatenatedString += `${(i===0) ? `` : ` OR`} ${coords_col} = \"${mysql.escape(coordslist[i].x)},${mysql.escape(coordslist[i].y)}\"`;} return concatenatedString;})();
     const SQLQuery2 = `SELECT * FROM ${tablename} WHERE` + generalscondition;
+    // console.log(SQLQuery2);
 
     return new Promise(function(resolve, reject) {
         executeQuery(SQLQuery2, (err, rows) => {
@@ -206,7 +207,7 @@ function readChunk(coordslist, ip) {
                 chunkbufferoffset+=chunklength;
             });
 
-            if (typeof ip !== 'undefined') console.log(`\x1b[2m\x1b[90m| READ | : q:${querytime-start}ms p:${Date.now()-querytime}ms Querying chunks (${coordslist[0].x},${coordslist[0].y}) to (${coordslist[coordslist.length-1].x},${coordslist[coordslist.length-1].y}) for user ${ip} \x1b[0m`);
+            if (typeof ip !== 'undefined') console.log(`\x1b[2;90m| READ | : q:${querytime-start}ms p:${Date.now()-querytime}ms Querying chunks (${coordslist[0].x},${coordslist[0].y}) to (${coordslist[coordslist.length-1].x},${coordslist[coordslist.length-1].y}) for user ${ip} \x1b[0m`);
             resolve(chunkbuffer);
         });
     });
@@ -214,8 +215,34 @@ function readChunk(coordslist, ip) {
 
 
 function writeLines(lines, userip) {
+
+    const requirements = [
+        lines.constructor.name !== "Array",
+        // lines.length === 0,
+        lines.length >= MAX_LINES,
+        (() => {
+            let valid = 0;
+            lines.forEach((line) => {
+                valid += (
+                    typeof line.p1.x !== 'number'
+                    || typeof line.p1.y !== 'number'
+                    || typeof line.p2.x !== 'number'
+                    || typeof line.p2.y !== 'number'
+                    || typeof line.offset.x !== 'number'
+                    || typeof line.offset.y !== 'number'
+                    || typeof line.blockid !== 'number'
+                    || line.blockid < 0
+                    || line.blockid > 16777215
+                ) ? 1 : 0;
+            })
+            return (valid !== 0);
+        })()
+    ]
+    // console.log(requirements);
+    const invalid_input = Boolean(requirements.reduce((partialSum, a) => partialSum + a, 0));
     
-    if (lines.length === 0 || lines.length >= MAX_LINES) return new Promise(function(resolve, reject) {resolve(false)});
+    if (invalid_input) return new Promise(function(resolve, reject) {reject(`\x1b[1;31mrequirements:[${requirements}]\nERROR: INCORRECT FORMAT IN lines:\n${JSON.stringify(lines)}\x1b[0m`)});
+    if (lines.length === 0) return new Promise(function(resolve, reject) {resolve(false)});
 
     let modchunks = {};
 
@@ -268,7 +295,7 @@ function writeLines(lines, userip) {
     const conditions = (() => {
         let concatenatedString = ''; 
         for (let i = 0; i < modchunksvalues.length; i++) {
-            concatenatedString += `${(i===0) ? `` : ` OR`} ${coords_col} = \"${mysql.escape(modchunksvalues[i].coord)}\"`;
+            concatenatedString += `${(i===0) ? `` : ` OR`} ${coords_col} = ${mysql.escape(modchunksvalues[i].coord)}`;
         } return concatenatedString;
     })();
     const SQLQuery1 = `SELECT * FROM ${tablename} WHERE` + conditions;
@@ -292,11 +319,12 @@ function writeLines(lines, userip) {
             const values = (() => {
                 let concatenatedString = '';
                 for (let i = 0; i < modchunksvalues.length; i++) {
-                    concatenatedString += ` (\"${mysql.escape(modchunksvalues[i].coord)}\", \"${mysql.escape(userip)}\", x\'${mysql.escape(modchunksvalues[i].chunkdata.toString('hex'))}\')${(i===modchunksvalues.length-1) ? ";" : ","}`;
+                    concatenatedString += ` (${mysql.escape(modchunksvalues[i].coord)}, ${mysql.escape(userip)}, x${mysql.escape(modchunksvalues[i].chunkdata.toString('hex'))})${(i===modchunksvalues.length-1) ? ";" : ","}`;
                 }
                 return concatenatedString;
             })();
             const SQLQuery2 = `REPLACE INTO ${tablename} (${coords_col}, ${userip_col}, ${chunkdata_col}) VALUES ` + values;
+            // console.log(SQLQuery2);
 
             resolve(SQLQuery2);
         });
