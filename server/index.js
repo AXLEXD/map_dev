@@ -71,11 +71,13 @@ app.post("/getimage", (req, res) => {
 
   let current = Date.now();
 
-  mapimage.MakeImage(coordsobj.x1, coordsobj.y1, coordsobj.x2, coordsobj.y2, coordsobj.startpoint, serve.readChunk).then((stream)=>{
+  mapimage.MakeImage(coordsobj.x1, coordsobj.y1, coordsobj.x2, coordsobj.y2, serve.readChunk).then((stream)=>{
     console.log(`\x1b[1m\x1b[7m$ DPNG $ : (${Date.now()-current}ms) Uploaded PNG image of chunks ${coordsobj.x1},${coordsobj.y1} to ${coordsobj.x2},${coordsobj.y2} for user ${ip}\x1b[0m`)
     let filename = `(${coordsobj.x1},${coordsobj.y1})-(${coordsobj.x2},${coordsobj.y2})_${new Date().toTimeString().split(" ")[0].replace(":","_")}.png`;
     res.set('Content-disposition', `attachment; filename="${filename}"`);
     stream.pipe(res);
+  }).catch((err)=>{
+    console.log(err);
   });
 });
 

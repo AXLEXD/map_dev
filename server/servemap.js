@@ -216,7 +216,7 @@ function readChunk(coordslist, ip) {
 
 function writeLines(lines, userip) {
 
-    const requirements = [
+    const invalids = [
         lines.constructor.name !== "Array",
         // lines.length === 0,
         lines.length >= MAX_LINES,
@@ -239,9 +239,9 @@ function writeLines(lines, userip) {
         })()
     ]
     // console.log(requirements);
-    const invalid_input = Boolean(requirements.reduce((partialSum, a) => partialSum + a, 0));
+    const invalid_input = Boolean(invalids.reduce((partialSum, a) => partialSum + a, 0));
     
-    if (invalid_input) return new Promise(function(resolve, reject) {reject(`\x1b[1;31mrequirements:[${requirements}]\nERROR: INCORRECT FORMAT IN lines:\n${JSON.stringify(lines)}\x1b[0m`)});
+    if (invalid_input) return new Promise(function(resolve, reject) {reject(`\x1b[1;invalids:[${invalids}]\nERROR: INCORRECT FORMAT IN lines:\n${JSON.stringify(lines)}\x1b[0m`)});
     if (lines.length === 0) return new Promise(function(resolve, reject) {resolve(false)});
 
     let modchunks = {};

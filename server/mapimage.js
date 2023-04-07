@@ -4,10 +4,20 @@ const fs = require('fs')
 
 
 const CHUNKSIZE =  16;
+const MAX_CHUNKS = 1000;
 
-function MakeImage(cxstart, cystart, cxend, cyend, startpoint, readChunk) {
+function MakeImage(cxstart, cystart, cxend, cyend, readChunk) {
     let chunkdimn = {x:(cxend-cxstart),y:(cyend-cystart)};
     let pixeldimn = {x:chunkdimn.x*CHUNKSIZE,y:chunkdimn.y*CHUNKSIZE};
+    
+    const invalids = [
+        chunkdimn.x >= MAX_CHUNKS,
+        chunkdimn.y >= MAX_CHUNKS,
+    ]
+    // console.log(requirements);
+    const invalid_input = Boolean(invalids.reduce((partialSum, a) => partialSum + a, 0));
+    if (invalid_input) return new Promise(function(resolve, reject) {reject(`\x1b[1;ERROR in MakeImage: invalids:[${invalids}]\x1b[0m`)});
+
     const canvas = createCanvas(pixeldimn.x, pixeldimn.y);
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = "#ffffff";
