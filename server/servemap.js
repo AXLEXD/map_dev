@@ -3,12 +3,19 @@ const common = require('./common.js');
 
 const mysql = require('mysql');
 const pool = mysql.createPool({
-    connectionLimit : 1,
+    connectionLimit : 10,
     host: '127.0.0.1',
     user: 'nodeserver',
     password: 'nodeserver',
-    database: 'new_db'
+    database: 'new_db',
+
 });
+pool.on('acquire', function (connection) {
+  console.log('Connection %d acquired', connection.threadId);
+});
+pool.on('release', function (connection) {
+    console.log('Connection %d released', connection.threadId);
+  });
 
 const tablename = 'chunks';
 const coords_col  = 'coord';
@@ -18,6 +25,9 @@ const userip_col  = 'userip';
 
 const chunksize = 16;
 const cellsize = 8;
+
+const MAX_LINES = 200;
+const MAX_READ_CHUNKS = 1000;
 
 
 
@@ -34,8 +44,9 @@ function executeQuery(query,callback) {
             }
         });
         connection.on('error', function(err) {
-              throw err;
-              return;     
+            connection.release();
+            // throw err;
+            return;     
         });
     });
 }
@@ -150,8 +161,11 @@ function convert(oldconnection) {
 
 
 function readChunk(coordslist, ip) {
+
+    if (coordslist.length >= MAX_READ_CHUNKS) return new Promise(function(resolve, reject) {resolve(new Buffer.alloc(0))});
+
     let start  = Date.now();
-    const generalscondition = (() => {let concatenatedString = ''; for (let i = 0; i < coordslist.length; i++) {concatenatedString += `${(i===0) ? `` : ` OR`} ${coords_col} = \"${coordslist[i].x},${coordslist[i].y}\"`;} return concatenatedString;})();
+    const generalscondition = (() => {let concatenatedString = ''; for (let i = 0; i < coordslist.length; i++) {concatenatedString += `${(i===0) ? `` : ` OR`} ${coords_col} = \"${mysql.escape(coordslist[i].x)},${mysql.escape(coordslist[i].y)}\"`;} return concatenatedString;})();
     const SQLQuery2 = `SELECT * FROM ${tablename} WHERE` + generalscondition;
 
     return new Promise(function(resolve, reject) {
@@ -199,146 +213,9 @@ function readChunk(coordslist, ip) {
 }
 
 
-
-// function drawPixels(pixels, ip) {
-
-//     let findchunk = (x,y)=> {
-//         // offset already applied
-
-//         const cell_i = Math.floor((x/chunksize));
-//         const cell_k = x - (cell_i)*chunksize;
-
-//         const cell_j = Math.floor((y/chunksize));
-//         const cell_l = y - (cell_j)*chunksize;
-
-//         let chunkindex = `${cell_i},${cell_j}`;
-//         if (modchunks[chunkindex] === undefined) {
-//             modchunks[chunkindex] = {x:cell_i,y:cell_j,chunkdata:Array(256).fill(0)};
-//         }
-//         return {i:cell_i,j:cell_j,k:cell_k,l:cell_l};
-//     }
-
-
-
-
-//     pixels.forEach(pixel=>{
-//         let valuesforpixel = findchunk(pixel.x,pixel.y);
-
-//         let pixelindex = pixel.k*chunksize+pixel.l;
-
-
-//         let writetoChunksQuery = new Promise(function(resolve, reject) {
-
-//             let coord = `\"${valuesforpixel.i},${valuesforpixel.j}\"`;
-//             const SQLQuery = `SELECT chunkdata FROM chunks WHERE ${coords_col}=${coord} as to_replace
-//             REPLACE INTO chunks (${coords_col}, ${userip_col}, ${chunkdata_col}) VALUES (${coord}, ${ip}, STUFF(to_replace, ${pixelindex+1}}, 1, \'${pixel.blockid}\'))
-//             `;
-
-//             connection.query(SQLQuery, (err, rows, fields) => {
-//                 if (err) throw err;
-//                 // console.log(rows);
-    
-//                 resolve();
-//             });
-//         });
-//     });
-// }
-
-
-
-// function writeLine(line, userip) {
-//     // chunkdatastring = `0`.repeat(256);
-
-//     let modchunks = {};
-
-//     let pixels = [];
-
-//     let findchunk = (x,y)=> {
-//         x = (x-line.offset.x);
-//         y = (y-line.offset.y);
-
-//         const cell_i = Math.floor((x/chunksize));
-//         const cell_k = x - (cell_i)*chunksize;
-
-//         const cell_j = Math.floor((y/chunksize));
-//         const cell_l = y - (cell_j)*chunksize;
-
-//         let chunkindex = `${cell_i},${cell_j}`;
-//         if (modchunks[chunkindex] === undefined) {
-//             modchunks[chunkindex] = {x:cell_i,y:cell_j,chunkdata:Array(256).fill(0)};
-//         }
-//         pixels.push({i:cell_i,j:cell_j,k:cell_k,l:cell_l});
-//     }
-
-//     let addpixel = (pixel) => {
-
-//         let chunkindex = `${pixel.i},${pixel.j}`;
-//         // console.log(chunkindex);
-
-//         let pixelindex = pixel.k*chunksize+pixel.l;
-
-//         modchunks[chunkindex].chunkdata[pixelindex] = line.blockid.toString();
-//     }
-
-//     common.plotLine(line.p1,line.p2,line.offset, findchunk);
-
-//     // console.log(modchunks);
-
-//     // (\"${x},${y}\", \"${userip}\", \"${chunkdatastring}\")
-//     let modchunksvalues = Object.values(modchunks);
-
-//     const conditions = (() => {
-//         let concatenatedString = ''; 
-//         for (let i = 0; i < modchunksvalues.length; i++) {
-//             concatenatedString += `${(i===0) ? `` : ` OR`} ${coords_col} = \"${modchunksvalues[i].x},${modchunksvalues[i].y}\"`;
-//         } return concatenatedString;
-//     })();
-//     const SQLQuery1 = `SELECT * FROM ${tablename} WHERE` + conditions;
-//     console.log(SQLQuery1);
-
-
-//     let getChunksQuery = new Promise(function(resolve, reject) {
-//         connection.query(SQLQuery1, (err, rows, fields) => {
-//             if (err) throw err;
-//             // console.log(rows);
-//             rows.forEach(item => {
-//                 let chunkindex = item.coord;
-//                 modchunks[chunkindex].chunkdata = item.chunkdata.split('');
-//             });
-
-//             pixels.forEach(item => {addpixel(item)}); //applies changes for every pixel
-
-//             let modchunksvalues = Object.values(modchunks);
-
-//             const values = (() => {
-//                 let concatenatedString = '';
-//                 for (let i = 0; i < modchunksvalues.length; i++) {
-//                     concatenatedString += ` (\"${modchunksvalues[i].x},${modchunksvalues[i].y}\", \"${userip}\", \"${modchunksvalues[i].chunkdata.join('')}\")${(i===modchunksvalues.length-1) ? ";" : ","}`;
-//                 }
-//                 return concatenatedString;
-//             })();
-//             const SQLQuery2 = `REPLACE INTO ${tablename} (${coords_col}, ${userip_col}, ${chunkdata_col}) VALUES ` + values;
-        
-
-//             resolve(SQLQuery2);
-//         });
-//     });
-    
-    
-//     return getChunksQuery.then((SQLQuery2)=> {
-//         // console.log(SQLQuery2);
-//         connection.query(SQLQuery2, (err, rows, fields) => {
-//             if (err) throw err;
-//             // console.log(`Returning ${JSON.stringify(result)}`);
-
-//             // resolve();
-//         });
-//     });
-// }
-
 function writeLines(lines, userip) {
     
-    if (lines.length === 0) return new Promise(function(resolve, reject) {resolve(false)});
+    if (lines.length === 0 || lines.length >= MAX_LINES) return new Promise(function(resolve, reject) {resolve(false)});
 
     let modchunks = {};
 
@@ -360,7 +237,7 @@ function writeLines(lines, userip) {
             let tempview = new Uint32Array(tempbuff.buffer, tempbuff.byteOffset, tempbuff.byteLength / Uint32Array.BYTES_PER_ELEMENT).fill(16777215);
             modchunks[chunkindex] = {coord:`${cell_i},${cell_j}`,chunkdata:tempbuff}; // chunkdata is filled after first query
         }
-        pixels.push({i:cell_i,j:cell_j,k:cell_k,l:cell_l,blockid:blockid});
+        pixels.push({i:cell_i,j:cell_j,k:cell_k,l:cell_l,blockid:mysql.escape(blockid)});
     }
 
     let addpixel = (pixel) => {
