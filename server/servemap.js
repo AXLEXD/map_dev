@@ -7,15 +7,15 @@ const pool = mysql.createPool({
     host: '127.0.0.1',
     user: 'nodeserver',
     password: 'nodeserver',
-    database: 'new_db',
-
+    database: 'new_db'
 });
+
 pool.on('acquire', function (connection) {
-  console.log('Connection %d acquired', connection.threadId);
+    console.log('Connection %d acquired', connection.threadId);
 });
 pool.on('release', function (connection) {
     console.log('Connection %d released', connection.threadId);
-  });
+});
 
 const tablename = 'chunks';
 const coords_col  = 'coord';
@@ -45,7 +45,7 @@ function executeQuery(query,callback) {
         });
         connection.on('error', function(err) {
             connection.release();
-            // throw err;
+            console.log(err);
             return;     
         });
     });

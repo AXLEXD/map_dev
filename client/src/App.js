@@ -287,10 +287,9 @@ class Map {
             }
         }
         return new Promise(function(resolve, reject) {
-            // fetch(`${window.location.protocol + '//' + window.location.hostname}:2999/getchunks`,{
             fetch(`/getchunks`,{
                 method: 'POST',
-                headers: {'Accept': 'application/octet-stream', 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                headers: {'Accept': 'application/octet-stream', 'Content-Type': 'application/json'},
                 body: JSON.stringify({coords:coords, lines:lines})
             }).then((data)=>{
                 return data.arrayBuffer();
@@ -476,10 +475,9 @@ class AppWrapper extends React.Component {
         let coordsobj = {x1:this.state.cxstart,y1:this.state.cystart,x2:this.state.cxend,y2:this.state.cyend};
         if (coordsobj.x1===coordsobj.x2 || coordsobj.y1===coordsobj.y2 || coordsobj.x1>coordsobj.x2 || coordsobj.y1>coordsobj.y2) return;
 
-        // fetch(`${window.location.protocol + '//' + window.location.hostname}:2999/getimage`,{
         fetch(`/getimage`,{
             method: 'POST',
-            headers: {'Accept': 'application/octet-stream', 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            headers: {'Accept': 'application/octet-stream', 'Content-Type': 'application/json'},
             body: JSON.stringify(coordsobj)
         }).then((response) => {
             filename = response.headers.get('Content-Disposition').split('"')[1];
