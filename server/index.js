@@ -34,20 +34,16 @@ app.use(express.json({limit: '50mb'}));
 // app.use(express.urlencoded({limit: '50mb'}));
 // app.use(bodyParser.urlencoded({ extended: false }))
 
-const corsOptions = {
-  origin: 'http://example.com',
-}
-app.use(cors(corsOptions));
+app.use(cors({ origin: false}));
 
 
 
-app.get("/test", cors(corsOptions), (req, res) => {
+app.get("/test", (req, res) => {
   console.log("connection");
   res.json({message:"hi"});
 })
 
-app.post("/getchunks", cors(corsOptions), (req, res) => {
-  console.log(req.header('Origin'));
+app.post("/getchunks", (req, res) => {
   // doQueryCount();
   var ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   let coordslist = req.body.coords;
@@ -62,7 +58,7 @@ app.post("/getchunks", cors(corsOptions), (req, res) => {
       // console.log(result);
       if (result) console.log(`\x1b[1;32m# DRAW # : (${Date.now()-current}ms) Drew ${linelist.length} lines for  user ${ip}\x1b[0m`);
     })
-    .then(()=>{return serve.readChunk(coordslist, ip).catch((err) => {console.log(err)})})
+    .then(async ()=>{return serve.readChunk(coordslist, ip).catch((err) => {console.log(err)})})
     .then((readchunks) => {
       // console.log(req.accepts("octet-stream"));
       res.set('Content-Type', 'application/octet-stream');
@@ -76,7 +72,7 @@ app.post("/getchunks", cors(corsOptions), (req, res) => {
   }
 });
 
-app.post("/getimage", cors(corsOptions), (req, res) => {
+app.post("/getimage", (req, res) => {
   // doQueryCount();
   var ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   let coordsobj = req.body;
