@@ -33,16 +33,22 @@ app.use(express.raw());
 app.use(express.json({limit: '50mb'}));
 // app.use(express.urlencoded({limit: '50mb'}));
 // app.use(bodyParser.urlencoded({ extended: false }))
-app.use(cors({ origin: 'localhost' }));
+
+const corsOptions = {
+  origin: 'http://example.com',
+}
+app.use(cors(corsOptions));
 
 
 
-app.get("/test", (req, res) => {
+app.get("/test", cors(corsOptions), (req, res) => {
+  console.log(req.header('Origin'));
   console.log("connection");
   res.json({message:"hi"});
 })
 
-app.post("/getchunks", (req, res) => {
+app.post("/getchunks", cors(corsOptions), (req, res) => {
+  console.log(req.header('Origin'));
   // doQueryCount();
   var ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   let coordslist = req.body.coords;
@@ -67,7 +73,7 @@ app.post("/getchunks", (req, res) => {
   });
 });
 
-app.post("/getimage", (req, res) => {
+app.post("/getimage", cors(corsOptions), (req, res) => {
   // doQueryCount();
   var ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   let coordsobj = req.body;
