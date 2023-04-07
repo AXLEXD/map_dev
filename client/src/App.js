@@ -808,12 +808,6 @@ class MapCanvas extends React.Component {
     }
 
     drawLine(p1,p2) {
-        // let thisdraw = ()=>{plotLine(p1, p2, this.celloffset, (x,y)=>this.drawCellAtMouse(x,y))};
-        let thisdraw = ()=>{
-            let pixels = [];
-            plotLine(p1, p2, this.celloffset, (x,y)=>{pixels.push({x:x,y:y, blockid:this.props.getColorSelected()})});
-            return pixels;
-        };
         
         let drawobj = {p1:p1,p2:p2,offset:this.celloffset,blockid:this.props.getColorSelected()};
         this.drawcache[this.drawcache.length-1].push(drawobj);
@@ -885,7 +879,6 @@ class MapCanvas extends React.Component {
                     let oldtempscale = this.tempscale;
                     if (newscale>LOWESTSCALE) this.tempscale = newscale;
                     else this.tempscale = LOWESTSCALE;
-                    let oldscale = this.scale;
                     console.log(this.tempscale);
                     const scalenum = this.tempscale/oldtempscale;
                     this.canvasscale(this.canvas, scalenum, scalenum);
