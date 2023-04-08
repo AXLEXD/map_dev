@@ -97,7 +97,13 @@ app.get('*', (req, res) => {
   res.sendFile(path.resolve(__dirname, '../client/build', 'index.html'));
 });
 
-app.listen(PORT,() => {
+var privateKey = fs.readFileSync( '/etc/letsencrypt/live/devo.esz.us/privkey.pem' );
+var certificate = fs.readFileSync( '/etc/letsencrypt/live/devo.esz.us/fullchain.pem' );
+
+https.createServer({
+  key: privateKey,
+  cert: certificate
+}, app).listen(PORT,() => {
   console.log(`Server listening on ${PORT}`);
   // serve.connection.connect();
 });
