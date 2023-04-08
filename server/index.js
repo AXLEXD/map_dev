@@ -51,6 +51,7 @@ app.post("/getchunks", (req, res) => {
 
   let current = Date.now();
   // console.log(req.body);
+  res.set('Access-Control-Allow-Origin', '*');
 
   try {
     serve.writeLines(linelist, ip).then((result)=>{
