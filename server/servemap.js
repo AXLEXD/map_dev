@@ -235,7 +235,7 @@ function writeLines(lines, userip) {
                         || typeof line.offset.y !== 'number'
                         || typeof line.blockid !== 'number'
                         || line.blockid < 0
-                        || line.blockid > 16777215
+                        || line.blockid > 4294967295
                     ) ? 1 : 0;
                 })
                 return (valid !== 0);
