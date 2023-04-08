@@ -289,7 +289,7 @@ class Map {
         return new Promise(function(resolve, reject) {
             fetch(`http://devo.esz.us/getchunks`,{
                 method: 'POST',
-                headers: {'Accept': 'application/octet-stream', 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                headers: {'Accept': 'application/octet-stream', 'Content-Type': 'application/json'},
                 body: JSON.stringify({coords:coords, lines:lines})
             }).then((data)=>{
                 return data.arrayBuffer();
@@ -477,7 +477,7 @@ class AppWrapper extends React.Component {
 
         fetch(`http://devo.esz.us/getimage`,{
             method: 'POST',
-            headers: {'Accept': 'application/octet-stream', 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            headers: {'Accept': 'application/octet-stream', 'Content-Type': 'application/json'},
             body: JSON.stringify(coordsobj)
         }).then((response) => {
             filename = response.headers.get('Content-Disposition').split('"')[1];
