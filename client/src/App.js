@@ -874,7 +874,7 @@ class MapCanvas extends React.Component {
                     this.drawMap(this.canvas, this.startpoint);
                 }}
                 onWheel={(e) => {
-                    let newscale = this.tempscale - Math.floor(e.deltaY)/1000;
+                    let newscale = this.tempscale - Math.floor(e.deltaY)/100;
                     // console.log(this.scale, this.tempscale);
                     let oldtempscale = this.tempscale;
                     if (newscale>LOWESTSCALE) this.tempscale = newscale;
