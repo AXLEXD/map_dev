@@ -759,7 +759,7 @@ class MapCanvas extends React.Component {
           canvas.width = (1*width*ratio);
           canvas.height = (1*height*ratio);
           context.scale(ratio, ratio);
-          console.log(ratio);
+        //   console.log(ratio);
         //   canvas.style.width = `${width}px`;
         //   canvas.style.height = `${height}px`;
           return true;
@@ -879,7 +879,7 @@ class MapCanvas extends React.Component {
                     let oldtempscale = this.tempscale;
                     if (newscale>LOWESTSCALE) this.tempscale = newscale;
                     else this.tempscale = LOWESTSCALE;
-                    console.log(this.tempscale);
+                    // console.log(this.tempscale);
                     const scalenum = this.tempscale/oldtempscale;
                     this.canvasscale(this.canvas, scalenum, scalenum);
                     // this.scale = Math.floor(this.tempscale);
