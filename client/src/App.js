@@ -2,7 +2,7 @@ import './App.css';
 import React, { createRef } from 'react';
 
 
-const UPDATEPERIOD = 500;
+const UPDATEPERIOD = 1000;
 
 const CHUNKSIZE = 16;
 
@@ -14,7 +14,7 @@ const DRAWTOOL = 0;
 const EYEDROPTOOL = 1;
 const MOVETOOL = 2;
 
-const RANDOM_LOCATION_MAX = 1000;
+const RANDOM_LOCATION_MAX = 500;
 
 const PRODUCTION = true;
 
