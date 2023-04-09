@@ -13,89 +13,17 @@ const STARTSCALE = 16;
 const DRAWTOOL = 0;
 const EYEDROPTOOL = 1;
 const MOVETOOL = 2;
-  
-// const blocks = [
-//     {
-//         blockid: '0',
-//         blockname: '1',
-//         imagesrc: '#ffffff'
-//     },
-//     {
-//         blockid: '1',
-//         blockname: '2',
-//         imagesrc: '#d1e7dc'
-//     },
-//     {
-//         blockid: '2',
-//         blockname: '3',
-//         imagesrc: '#c4d4e1'
-//     },
-//     {
-//         blockid: '3',
-//         blockname: '4',
-//         imagesrc: '#bcb5d3'
-//     },
-//     {
-//         blockid: '4',
-//         blockname: '5',
-//         imagesrc: '#f5dbe2'
-//     },
-//     {
-//         blockid: '5',
-//         blockname: '6',
-//         imagesrc: '#eeb6c9'
-//     },
-//     {
-//         blockid: '6',
-//         blockname: '7',
-//         imagesrc: '#c49abf'
-//     },
-//     {
-//         blockid: '7',
-//         blockname: '8',
-//         imagesrc: '#bada55'
-//     },
-//     {
-//         blockid: '8',
-//         blockname: '9',
-//         imagesrc: '#ffd700'
-//     },
-//     {
-//         blockid: '9',
-//         blockname: '10',
-//         imagesrc: '#f47b79'
-//     },
-//     {
-//         blockid: 'a',
-//         blockname: '11',
-//         imagesrc: '#c6e2d4'
-//     },
-//     {
-//         blockid: 'b',
-//         blockname: '12',
-//         imagesrc: '#b6d3c2'
-//     },
-//     {
-//         blockid: 'c',
-//         blockname: '13',
-//         imagesrc: '#e0b1cb'
-//     },
-//     {
-//         blockid: 'd',
-//         blockname: '14',
-//         imagesrc: '#d0a7b7'
-//     },
-//     {
-//         blockid: 'e',
-//         blockname: '15',
-//         imagesrc: '#f3d1d3'
-//     },
-//     {
-//         blockid: 'f',
-//         blockname: '16',
-//         imagesrc: '#e9b8c8'
-//     }
-// ];
+
+const RANDOM_LOCATION_MAX = 1000;
+
+
+
+// const API_HOST = "https://devo.esz.us";
+const API_HOST = "http://localhost:3001";
+
+
+
+
 
 const colors = [
     "#000000", // Black
@@ -245,7 +173,6 @@ class Vector2D {
 
 class Map {
     constructor() {
-        // this.canvasdimensions = new Vector2D(w,h); // establishing at start means no resizing canvas element
         //the data returned by the server
         this.data = null;
         //the data formatted as an image bitmap
@@ -255,7 +182,7 @@ class Map {
         this.imageview = null;
 
         this.numchunks = null;
-        this.cellsize = 2;
+        this.cellsize = null;
     }
 
     getValues(canvas, offset, scale) {
@@ -275,7 +202,7 @@ class Map {
         return {startpoint, numchunks};
     }
 
-    async setMatrix(dimn, start, lines, cellsize, changeTranscodeTime) {
+    async setMatrix(dimn, start, lines, cellsize, changeTranscodeTime, map_ver) {
 
         let coords = [];
         let map_grid = this;
@@ -287,10 +214,10 @@ class Map {
             }
         }
         return new Promise(function(resolve, reject) {
-            fetch(`https://devo.esz.us/getchunks`,{
+            fetch(`${API_HOST}/getchunks`,{
                 method: 'POST',
                 headers: {'Accept': 'application/octet-stream', 'Content-Type': 'application/json'},
-                body: JSON.stringify({coords:coords, lines:lines})
+                body: JSON.stringify({coords:coords, lines:lines, map_ver:map_ver})
             }).then((data)=>{
                 return data.arrayBuffer();
             }).then((chunkbuffer) => {
@@ -353,6 +280,7 @@ class AppWrapper extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
+            map_ver: null,
             tool_mode: MOVETOOL,
             debug_mode: false,
             show_stats: true,
@@ -391,10 +319,6 @@ class AppWrapper extends React.Component {
 
         this.strokecanvasRef = createRef();
         this.colorInputRef = createRef();
-
-        this.getColorSelected = () => {return this.state.color_selected};
-        this.getDebugMode = () => {return this.state.debug_mode};
-        this.getToolMode = () => {return this.state.tool_mode};
 
         this.changeToolMode = (change_to) => {
             this.setState({tool_mode: change_to});
@@ -450,9 +374,10 @@ class AppWrapper extends React.Component {
 
     componentDidMount() {
         document.body.style.overflow = "hidden"; // stops user from scrolling the page
+        this.fetchInitialParameters();
         this.strokecanvas = this.strokecanvasRef.current;
         this.colorinput = this.colorInputRef.current;
-        this.drawStrokeCanvas();
+        this.drawStrokeCanvas(this.state.color_selected);
     }
 
     drawStrokeCanvas(color) {
@@ -470,12 +395,28 @@ class AppWrapper extends React.Component {
         ctx.fillRect(cellsize, cellsize, cellsize,cellsize);
     }
 
+    fetchInitialParameters() {
+
+        // mapver: 0 (default), a (mine)
+
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        let mapver;
+        if (urlParams.has('map')) mapver = urlParams.get('map');
+        else mapver = "default";
+
+        console.log(urlParams.has('map'), urlParams.get('map'));
+
+        this.setState({map_ver: mapver});
+
+    }
+
     mapDownload() {
         let filename;
-        let coordsobj = {x1:this.state.cxstart,y1:this.state.cystart,x2:this.state.cxend,y2:this.state.cyend};
+        let coordsobj = {x1:this.state.cxstart,y1:this.state.cystart,x2:this.state.cxend,y2:this.state.cyend, map_ver:this.state.map_ver};
         if (coordsobj.x1===coordsobj.x2 || coordsobj.y1===coordsobj.y2 || coordsobj.x1>coordsobj.x2 || coordsobj.y1>coordsobj.y2) return;
 
-        fetch(`https://devo.esz.us/getimage`,{
+        fetch(`${API_HOST}/getimage`,{
             method: 'POST',
             headers: {'Accept': 'application/octet-stream', 'Content-Type': 'application/json'},
             body: JSON.stringify(coordsobj)
@@ -499,13 +440,13 @@ class AppWrapper extends React.Component {
             <div className='App-wrapper'>
                 <MapCanvas 
                     toolmode={this.state.tool_mode}
-                    getToolMode={this.getToolMode}
+                    color_selected={this.state.color_selected}
+                    debug_mode={this.state.debug_mode}
+                    map_ver={this.state.map_ver}
                     changeToolMode={this.changeToolMode}
-                    getDebugMode={this.getDebugMode}
                     changeUpdateTime={this.changeUpdateTime}
                     changeTranscodeTime={this.changeTranscodeTime}
                     changeDrawTime={this.changeDrawTime}
-                    getColorSelected={this.getColorSelected}
                     changeCursorLoc={this.changeCursorLoc}
                     changeOffsetLoc={this.changeOffsetLoc}
                     changeChunkLoc={this.changeChunkLoc}
@@ -523,15 +464,15 @@ class AppWrapper extends React.Component {
                     </div>):null}
 
                     <div
-                        className={`toolbutton` + (this.getToolMode()===DRAWTOOL ? "selected" : "")+ ` blockbutton` + (this.getToolMode()===DRAWTOOL ? "selected" : "")}
+                        className={`toolbutton` + (this.state.tool_mode===DRAWTOOL ? "selected" : "")+ ` blockbutton` + (this.state.tool_mode===DRAWTOOL ? "selected" : "")}
                         onClick={() => {this.changeToolMode(DRAWTOOL)}}
                     >draw</div>
                     <div
-                        className={`toolbutton` + (this.getToolMode()===EYEDROPTOOL ? "selected" : "")+ ` blockbutton` + (this.getToolMode()===EYEDROPTOOL ? "selected" : "")}
+                        className={`toolbutton` + (this.state.tool_mode===EYEDROPTOOL ? "selected" : "")+ ` blockbutton` + (this.state.tool_mode===EYEDROPTOOL ? "selected" : "")}
                         onClick={() => {this.changeToolMode(EYEDROPTOOL)}}
                     >eyedrop</div>
                     <div
-                        className={`toolbutton` + (this.getToolMode()===MOVETOOL ? "selected" : "")+ ` blockbutton` + (this.getToolMode()===MOVETOOL ? "selected" : "")}
+                        className={`toolbutton` + (this.state.tool_mode===MOVETOOL ? "selected" : "")+ ` blockbutton` + (this.state.tool_mode===MOVETOOL ? "selected" : "")}
                         onClick={() => {this.changeToolMode(MOVETOOL)}}
                     >move</div>
                     
@@ -562,7 +503,7 @@ class AppWrapper extends React.Component {
                         </tr>
                     </tbody></table>
                     <canvas ref={this.strokecanvasRef} style={{width:"10vmin",height:"10vmin"}}></canvas>
-                    <input ref={this.colorInputRef} style={{height:"40px", width:"40px", border:"none"}} value={this.props.color} type={"color"} onChange={(e)=>{this.changeColor(colorTo32Uint(e.target.value))}}></input>
+                    <input ref={this.colorInputRef} style={{height:"40px", width:"40px", border:"none"}} defaultValue={colorToString(this.state.color_selected)} type={"color"} onChange={(e)=>{this.changeColor(colorTo32Uint(e.target.value))}}></input>
                     {/* <div style={{width:"100px", height:"100px", backgroundColor:colorToString(this.state.color_selected)}}></div> */}
                 </div>
             </div>
@@ -605,13 +546,17 @@ class MapCanvas extends React.Component {
 
 
     //Called after element's initialisation
-    componentDidMount() { 
+    componentDidMount() {
         this.canvas = this.canvasRef.current;
         this.replacecanvas = document.createElement('canvas');
         this.map_grid = new Map();
         this.resizeCanvas(this.canvas);
         window.addEventListener('resize', ()=>this.resizeCanvas(this.canvas));
         setTimeout(this.updateCanvas(), UPDATEPERIOD);
+
+        let x = (Math.floor(Math.random() * RANDOM_LOCATION_MAX*2 - RANDOM_LOCATION_MAX))*this.scale;
+        let y = (Math.floor(Math.random() * RANDOM_LOCATION_MAX*2 - RANDOM_LOCATION_MAX))*this.scale;
+        this.moveMap(this.mapoffset, new Vector2D(x,y));
     }
 
     getCursorPosition(event, canvas) {
@@ -633,6 +578,7 @@ class MapCanvas extends React.Component {
     moveMap(start, end) {
         let x = (end.x-start.x)/this.scale;
         let y = (end.y-start.y)/this.scale;
+        // console.log(x,y);
         this.mapoffset.transform(x,y);
         this.celloffset.setTo(Math.floor(this.mapoffset.x),Math.floor(this.mapoffset.y));
         this.props.changeOffsetLoc(this.celloffset);
@@ -676,7 +622,7 @@ class MapCanvas extends React.Component {
         {
             ctx.drawImage(this.replacecanvas, offset_x, offset_y);
             
-            if (this.props.getDebugMode()) {
+            if (this.props.debug_mode) {
                 ctx.beginPath();
                 for (let i=0;i<this.map_grid.numchunks.x;i++) {
                     for (let j=0;j<this.map_grid.numchunks.y;j++) {
@@ -708,7 +654,7 @@ class MapCanvas extends React.Component {
 
             if (this.props.toolmode===DRAWTOOL) {
                 // doFill(this.cellpos);
-                ctx.fillStyle = colorToString(this.props.getColorSelected())+"ff";
+                ctx.fillStyle = colorToString(this.props.color_selected)+"ff";
                 doFill(this.cellpos.i, this.cellpos.j, this.cellpos.k, this.cellpos.l);
             }
         };
@@ -724,27 +670,30 @@ class MapCanvas extends React.Component {
         let {startpoint, numchunks} = this.map_grid.getValues(this.canvas, this.mapoffset.multipliedby(tempupdatescale), tempupdatescale);
         let linestosend = this.drawLines;
         this.drawLines = [];
-        this.map_grid.setMatrix(numchunks, startpoint, linestosend, tempupdatescale, this.props.changeTranscodeTime)
-        .then(()=>{
-            this.replacecanvas.width = tempupdatescale*numchunks.x*CHUNKSIZE;
-            this.replacecanvas.height = tempupdatescale*numchunks.y*CHUNKSIZE;    
+        console.log(this.props.map_ver);
+        if (this.props.map_ver!==null) {
+            this.map_grid.setMatrix(numchunks, startpoint, linestosend, tempupdatescale, this.props.changeTranscodeTime, this.props.map_ver)
+            .then(()=>{
+                this.replacecanvas.width = tempupdatescale*numchunks.x*CHUNKSIZE;
+                this.replacecanvas.height = tempupdatescale*numchunks.y*CHUNKSIZE;    
 
-            this.canvas.getContext('2d').resetTransform();
-            this.resizeCanvas(this.canvas);
-            this.canvasscale(this.canvas, this.tempscale/tempupdatescale, this.tempscale/tempupdatescale)
-            this.scale = Math.floor(this.tempscale)
-            this.startpoint = startpoint;
-            this.drawMap(this.canvas, startpoint, true);
+                this.canvas.getContext('2d').resetTransform();
+                this.resizeCanvas(this.canvas);
+                this.canvasscale(this.canvas, this.tempscale/tempupdatescale, this.tempscale/tempupdatescale)
+                this.scale = Math.floor(this.tempscale)
+                this.startpoint = startpoint;
+                this.drawMap(this.canvas, startpoint, true);
 
-            this.props.changeUpdateTime(Date.now()-start);
-        }).then(()=>{
-            // this.drawcache.forEach((draw) => {draw()});
-            this.drawcache.push([]);
-            if (this.drawcache.length>4) {
-                this.drawcache.shift();
-            }
-            
-        });
+                this.props.changeUpdateTime(Date.now()-start);
+            }).then(()=>{
+                // this.drawcache.forEach((draw) => {draw()});
+                this.drawcache.push([]);
+                if (this.drawcache.length>4) {
+                    this.drawcache.shift();
+                }
+                
+            });
+        }
 
         setTimeout(()=>{this.updateCanvas()}, UPDATEPERIOD);
     }
@@ -778,14 +727,6 @@ class MapCanvas extends React.Component {
         // ctx.translate(-transx, -transy);
     }
 
-    // drawCellAtMouse(x,y) {
-    //     const currentpos = new Vector2D(x-this.celloffset.x,y-this.celloffset.y);
-
-    //     let {i, j, k, l} = this.map_grid.getChunkPosOffset(currentpos, this.startpoint);
-    //     let dataindex = this.map_grid.getDataIndex(i,j,k,l);
-    //     if (dataindex < this.map_grid.image.byteLength/4) this.map_grid.addCell(dataindex, this.props.getColorSelected());
-    // }
-
     moveCursor(event) {
         let update = false;
         let newcursorcurrent = this.getCursorPosition(event, this.canvas);
@@ -809,7 +750,7 @@ class MapCanvas extends React.Component {
 
     drawLine(p1,p2) {
         
-        let drawobj = {p1:p1,p2:p2,offset:this.celloffset,blockid:this.props.getColorSelected()};
+        let drawobj = {p1:p1,p2:p2,offset:this.celloffset,blockid:this.props.color_selected};
         this.drawcache[this.drawcache.length-1].push(drawobj);
         this.drawLines.push(drawobj);
     }

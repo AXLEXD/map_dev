@@ -2,6 +2,7 @@
 const common = require('./common.js');
 
 const mysql = require('mysql');
+
 const pool = mysql.createPool({
     connectionLimit : 10,
     host: '127.0.0.1',
@@ -17,7 +18,7 @@ const pool = mysql.createPool({
 //     console.log('Connection %d released', connection.threadId);
 // });
 
-const tablename = 'chunks';
+// const tablename = 'chunks';
 const coords_col  = 'coord';
 const chunkdata_col  = 'chunkdata';
 const userip_col  = 'userip';
@@ -116,7 +117,7 @@ function convert(oldconnection) {
    let currenttime = Date.now();
 
 
-    const SQLQuery1 = `SELECT * FROM ${tablename}`;
+    const SQLQuery1 = `SELECT * FROM \`${tablename}\``;
 
     let initrows =  new Promise(function(resolve, reject) {
         oldconnection.query(SQLQuery1, (err, rows, fields) => {
@@ -160,14 +161,15 @@ function convert(oldconnection) {
 }
 
 
-function readChunk(coordslist, ip) {
+function readChunk(coordslist, ip, map_ver) {
+    const tablename = map_ver;
 
     if (typeof coordslist !== 'object') return new Promise(function(resolve, reject) {reject(`\x1b[1;ERROR: got no coords. coordslist:\n${JSON.stringify(coordslist)}\x1b[0m`)});
     if (coordslist.length >= MAX_READ_CHUNKS) return new Promise(function(resolve, reject) {resolve(new Buffer.alloc(0))});
 
     let start  = Date.now();
     const generalscondition = (() => {let concatenatedString = ''; for (let i = 0; i < coordslist.length; i++) {concatenatedString += `${(i===0) ? `` : ` OR`} ${coords_col} = \"${mysql.escape(coordslist[i].x)},${mysql.escape(coordslist[i].y)}\"`;} return concatenatedString;})();
-    const SQLQuery2 = `SELECT * FROM ${tablename} WHERE` + generalscondition;
+    const SQLQuery2 = `SELECT * FROM \`${tablename}\` WHERE` + generalscondition;
     // console.log(SQLQuery2);
 
     return new Promise(function(resolve, reject) {
@@ -208,14 +210,16 @@ function readChunk(coordslist, ip) {
                 chunkbufferoffset+=chunklength;
             });
 
-            if (typeof ip !== 'undefined') console.log(`\x1b[2;90m| READ | : q:${querytime-start}ms p:${Date.now()-querytime}ms Querying chunks (${coordslist[0].x},${coordslist[0].y}) to (${coordslist[coordslist.length-1].x},${coordslist[coordslist.length-1].y}) for user ${ip} \x1b[0m`);
+            if (typeof ip !== 'undefined') console.log(`\x1b[2;90m| READ | : q:${querytime-start}ms p:${Date.now()-querytime}ms (map='${tablename}') Querying chunks (${coordslist[0].x},${coordslist[0].y}) to (${coordslist[coordslist.length-1].x},${coordslist[coordslist.length-1].y}) for user ${ip} \x1b[0m`);
             resolve(chunkbuffer);
         });
     });
 }
 
 
-function writeLines(lines, userip) {
+function writeLines(lines, userip, map_ver) {
+
+    const tablename = map_ver;
 
     if (typeof lines !== 'object') return new Promise(function(resolve, reject) {resolve(false)});
     try {
@@ -305,7 +309,7 @@ function writeLines(lines, userip) {
             concatenatedString += `${(i===0) ? `` : ` OR`} ${coords_col} = ${mysql.escape(modchunksvalues[i].coord)}`;
         } return concatenatedString;
     })();
-    const SQLQuery1 = `SELECT * FROM ${tablename} WHERE` + conditions;
+    const SQLQuery1 = `SELECT * FROM \`${tablename}\` WHERE` + conditions;
 
 
     // console.log(SQLQuery1);

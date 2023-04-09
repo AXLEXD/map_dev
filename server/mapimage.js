@@ -6,7 +6,7 @@ const fs = require('fs')
 const CHUNKSIZE =  16;
 const MAX_CHUNKS = 1000;
 
-function MakeImage(cxstart, cystart, cxend, cyend, readChunk) {
+function MakeImage(cxstart, cystart, cxend, cyend, readChunk, map_ver) {
     let chunkdimn = {x:(cxend-cxstart),y:(cyend-cystart)};
     let pixeldimn = {x:chunkdimn.x*CHUNKSIZE,y:chunkdimn.y*CHUNKSIZE};
     
@@ -31,7 +31,7 @@ function MakeImage(cxstart, cystart, cxend, cyend, readChunk) {
         }
     }
     return new Promise(function(resolve, reject) {
-        readChunk(coords).then((result) => {
+        readChunk(coords, null, map_ver).then((result) => {
         let bufferview = new Uint32Array(result.buffer, result.byteOffset, result.byteLength / Uint32Array.BYTES_PER_ELEMENT);
         // console.log(bufferview);
         for (let i=0;i<chunkdimn.x;i++) {
