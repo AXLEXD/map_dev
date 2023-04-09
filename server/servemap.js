@@ -150,7 +150,7 @@ function convert(oldconnection) {
             }
             return concatenatedString;
         })();
-        const SQLQuery2 = `REPLACE INTO ${tablename} (${coords_col}, ${userip_col}, ${chunkdata_col}) VALUES ` + values;
+        const SQLQuery2 = `REPLACE INTO \`${tablename}\` (${coords_col}, ${userip_col}, ${chunkdata_col}) VALUES ` + values;
         connection.query(SQLQuery2, (err, rows, fields) => {
             if (err) throw err;
 
@@ -162,7 +162,7 @@ function convert(oldconnection) {
 
 
 function readChunk(coordslist, ip, map_ver) {
-    const tablename = map_ver;
+    const tablename = mysql.escape(map_ver);
 
     if (typeof coordslist !== 'object') return new Promise(function(resolve, reject) {reject(`\x1b[1;ERROR: got no coords. coordslist:\n${JSON.stringify(coordslist)}\x1b[0m`)});
     if (coordslist.length >= MAX_READ_CHUNKS) return new Promise(function(resolve, reject) {resolve(new Buffer.alloc(0))});
@@ -219,7 +219,7 @@ function readChunk(coordslist, ip, map_ver) {
 
 function writeLines(lines, userip, map_ver) {
 
-    const tablename = map_ver;
+    const tablename = mysql.escape(map_ver);
 
     if (typeof lines !== 'object') return new Promise(function(resolve, reject) {resolve(false)});
     try {
@@ -334,7 +334,7 @@ function writeLines(lines, userip, map_ver) {
                 }
                 return concatenatedString;
             })();
-            const SQLQuery2 = `REPLACE INTO ${tablename} (${coords_col}, ${userip_col}, ${chunkdata_col}) VALUES ` + values;
+            const SQLQuery2 = `REPLACE INTO \`${tablename}\` (${coords_col}, ${userip_col}, ${chunkdata_col}) VALUES ` + values;
             // console.log(SQLQuery2);
 
             resolve(SQLQuery2);
