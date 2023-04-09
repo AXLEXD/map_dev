@@ -2,7 +2,7 @@ import './App.css';
 import React, { createRef } from 'react';
 
 
-const UPDATEPERIOD = 1000;
+const UPDATEPERIOD = 500;
 
 const CHUNKSIZE = 16;
 
@@ -310,7 +310,8 @@ class AppWrapper extends React.Component {
             cxstart:0,
             cystart:0,
             cxend:0,
-            cyend:0
+            cyend:0,
+            showinfobox:true
         };
 
         this.strokecanvas = null;
@@ -377,6 +378,29 @@ class AppWrapper extends React.Component {
         this.strokecanvas = this.strokecanvasRef.current;
         this.colorinput = this.colorInputRef.current;
         this.drawStrokeCanvas(this.state.color_selected);
+        document.addEventListener('keydown', (e)=>{this.handleKeyDown(e, this.changeToolMode)});
+    }
+
+    handleKeyDown(e, changeToolMode) {
+        let toolmode = null;
+        // console.log(e.key);
+        switch (e.key) {
+            case "1":
+            case "d":
+                toolmode = DRAWTOOL;
+                break;
+            case "2":
+            case "e":
+                toolmode = EYEDROPTOOL;
+                break;
+            case "3":
+            case "m":
+                toolmode = MOVETOOL;
+                break;
+            default:
+                break;
+        }
+        if (toolmode!==null) changeToolMode(toolmode);
     }
 
     drawStrokeCanvas(color) {
@@ -413,7 +437,7 @@ class AppWrapper extends React.Component {
     mapDownload() {
         let filename;
         let coordsobj = {x1:this.state.cxstart,y1:this.state.cystart,x2:this.state.cxend,y2:this.state.cyend, map_ver:this.state.map_ver};
-        if (coordsobj.x1===coordsobj.x2 || coordsobj.y1===coordsobj.y2 || coordsobj.x1>coordsobj.x2 || coordsobj.y1>coordsobj.y2) return;
+        if (coordsobj.x1>coordsobj.x2 || coordsobj.y1>coordsobj.y2) return;
 
         fetch(`${API_HOST}/getimage`,{
             method: 'POST',
@@ -436,7 +460,11 @@ class AppWrapper extends React.Component {
 
     render() {
         return (
-            <div className='App-wrapper'>
+            <div className='App-wrapper'
+            onKeyDown={(e)=>{
+                console.log(e.key);
+            }}
+            >
                 <MapCanvas 
                     toolmode={this.state.tool_mode}
                     color_selected={this.state.color_selected}
@@ -451,35 +479,43 @@ class AppWrapper extends React.Component {
                     changeChunkLoc={this.changeChunkLoc}
                     changeColor={this.changeColor}
                 />
-                <Palette isSelected={this.isSelected} changeColor={this.changeColor} color={this.state.color_selected}/>
-                <div className='drawer primary'>
-                    {(this.state.show_stats)?(<div style={{position: `absolute`,right:`0.8vw`}}>
+                <Palette 
+                    isSelected={this.isSelected} 
+                    changeColor={this.changeColor} 
+                    color_selected={this.state.color_selected}
+                    strokecanvasRef={this.strokecanvasRef}
+                    colorInputRef={this.colorInputRef}
+                />
+                <div className='drawer primary flex'>
+                    {(this.state.show_stats)?(<div style={{position: `absolute`,right:`0.8vw`,fontSize:"90%"}}>
                         ({this.state.update.time}ms, avg: {Math.round(this.state.update.tot_time/this.state.update.num_updates)}ms, {this.state.update.num_updates} updates)
                         <br/>({this.state.transcode.time}ms, avg: {Math.round(this.state.transcode.tot_time/this.state.transcode.num_updates)}ms, {this.state.transcode.num_updates} transcodes);
                         <br/>({this.state.draw.time}ms, avg: {Math.round(this.state.draw.tot_time/this.state.draw.num_updates)}ms, {this.state.draw.num_updates} draws)
-                        <br/>Cursor: ({this.state.cursorx},{this.state.cursory})
-                        <br/>Offset: ({this.state.offsetx},{this.state.offsety})
-                        <br/>Chunk: ({this.state.chunkx},{this.state.chunky})
+                        <br/>Screen Coords: ({this.state.offsetx},{this.state.offsety})
+                        <br/>Chunk Coords: ({this.state.chunkx},{this.state.chunky})
+                        <br/>Cursor Coords: ({this.state.cursorx},{this.state.cursory})
                     </div>):null}
 
                     <div
-                        className={`toolbutton` + (this.state.tool_mode===DRAWTOOL ? "selected" : "")+ ` blockbutton` + (this.state.tool_mode===DRAWTOOL ? "selected" : "")}
+                        className={`flex toolbutton` + (this.state.tool_mode===DRAWTOOL ? "selected" : "")}
                         onClick={() => {this.changeToolMode(DRAWTOOL)}}
-                    >draw</div>
+                    ><img src={(this.state.tool_mode===DRAWTOOL) ? 'drawtoolselect.png' : 'drawtool.png'} alt='drawtool'/></div>
                     <div
-                        className={`toolbutton` + (this.state.tool_mode===EYEDROPTOOL ? "selected" : "")+ ` blockbutton` + (this.state.tool_mode===EYEDROPTOOL ? "selected" : "")}
+                        className={`flex toolbutton` + (this.state.tool_mode===EYEDROPTOOL ? "selected" : "")}
                         onClick={() => {this.changeToolMode(EYEDROPTOOL)}}
-                    >eyedrop</div>
+                    ><img src={(this.state.tool_mode===EYEDROPTOOL) ? 'eyedroptoolselect.png' : 'eyedroptool.png'} alt='eyedroptool'/></div>
                     <div
-                        className={`toolbutton` + (this.state.tool_mode===MOVETOOL ? "selected" : "")+ ` blockbutton` + (this.state.tool_mode===MOVETOOL ? "selected" : "")}
+                        className={`flex toolbutton` + (this.state.tool_mode===MOVETOOL ? "selected" : "")}
                         onClick={() => {this.changeToolMode(MOVETOOL)}}
-                    >move</div>
+                    ><img src={(this.state.tool_mode===MOVETOOL) ? 'movetoolselect.png' : 'movetool.png'} alt='movetool'/></div>
                     
 
-                    <input checked={this.state.debug_mode} type={"checkbox"} onChange={()=>{this.setState({debug_mode:!this.state.debug_mode})}}></input> Debug Mode&ensp;
-                    <input checked={this.state.show_stats} type={"checkbox"} onChange={()=>{this.setState({show_stats:!this.state.show_stats})}}></input> Stats
+                    <div className='flex' style={{flexDirection:"column", alignItems:"start"}}>
+                        <div><input checked={this.state.debug_mode} type={"checkbox"} onChange={()=>{this.setState({debug_mode:!this.state.debug_mode})}}></input> Show Chunk Borders&ensp;</div>
+                        <div><input checked={this.state.show_stats} type={"checkbox"} onChange={()=>{this.setState({show_stats:!this.state.show_stats})}}></input> Show Stats</div>
+                    </div>
                     <table
-                        className={`download-wrapper`}
+                        className={`download-wrapper flex`}
                         // onClick={() => this.fileDownload()}
                     ><tbody>
                         <tr>
@@ -497,13 +533,32 @@ class AppWrapper extends React.Component {
                         <tr>
                             <td>
                                 <p >Save PNG:</p>
-                                <div className={`download-button`} onClick={() => this.mapDownload()}><img src='save.png' alt='save'/></div>
+                                <div className={`download-button flex`} onClick={() => this.mapDownload()}><img src='save.png' alt='save'/></div>
                             </td>
                         </tr>
                     </tbody></table>
-                    <canvas ref={this.strokecanvasRef} style={{width:"10vmin",height:"10vmin"}}></canvas>
-                    <input ref={this.colorInputRef} style={{height:"40px", width:"40px", border:"none"}} defaultValue={colorToString(this.state.color_selected)} type={"color"} onChange={(e)=>{this.changeColor(colorTo32Uint(e.target.value))}}></input>
                     {/* <div style={{width:"100px", height:"100px", backgroundColor:colorToString(this.state.color_selected)}}></div> */}
+                </div>
+                <div style={{
+                        visibility: (this.state.showinfobox) ? "visible" : "hidden", 
+                        opacity: (this.state.showinfobox) ? 1 : 0,
+                        pointerEvents: (this.state.showinfobox) ? "all" : "none"
+                    }} className='infobox-wrapper primary flex'>
+                    <div className='infobox'>
+                        <div className='infoclose primary flex' onClick={(e)=>{this.setState({showinfobox:false})}}><img src='close.png' alt='close info'/></div>
+                        <div className='infotext-wrapper'>
+                            <h1 style={{lineHeight:"140%", fontSize: "180%"}}>Hi, welcome to the Pixel Art Canvas.</h1>
+                            <p>This is an infinite canvas of pixels, in which you can draw anything!</p><br/>
+                            <b style={{lineHeight:"190%"}}>On the toolbar below, there are 3 tools.</b>
+                            <ul>
+                                <li style={{marginTop:"5px",color:"#FFE3E3"}}>Use the move tool to navigate around the canvas by dragging it with the mouse. The canvas will load in procedurally as you move around.</li>
+                                <li style={{marginTop:"5px",color:"#DEFFDE"}}>Use the eyedrop tool to select a colour by hovering over a pixel with your desired colour and clicking. Your brush will now be set to that colour!</li>
+                                <li style={{marginTop:"5px",marginBottom:"10px",color:"#E1F6FF"}}>Use the draw tool to draw stuff. You can do this by moving the mouse while holding left click. You can also move the canvas while in draw mode by right clicking and dragging the canvas.</li>
+                            </ul>
+                            <p>You can also select colours using the colour picker next to the brush display on the palette (right).</p><br/>
+                            <p>If you would like to save anything you draw, you can download a PNG of your drawing by entering the range of chunks you want to download into the PNG input box. (You can view chunk coordinates on the right hand side of the toolbar - labeled 'Chunk Coords', and you can view chunk borders by enabling 'Show Chunk Borders')</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         )
@@ -580,7 +635,7 @@ class MapCanvas extends React.Component {
         // console.log(x,y);
         this.mapoffset.transform(x,y);
         this.celloffset.setTo(Math.floor(this.mapoffset.x),Math.floor(this.mapoffset.y));
-        this.props.changeOffsetLoc(this.celloffset);
+        this.props.changeOffsetLoc(this.celloffset.multipliedby(-1));
     }
 
     drawMap (canvas, startpoint, isupdate) {
@@ -836,14 +891,12 @@ class Palette extends React.Component {
     constructor(props) {
         super(props);
 
-        this.handleChange = (e) => {
-            this.props.changeColor(e.target.value);
-        }
     }
 
     render() {
         return (
-            <div className='palette primary'>
+            <div className='palette primary flex'>
+                <div className='color-wrapper flex'>
                 {
                     colors.map((color,index) => (
                         <div 
@@ -855,6 +908,11 @@ class Palette extends React.Component {
                             ></div>
                     ))
                 }
+                </div>
+                <div className="flex" style={{flexDirection:"row", gap: "5px"}}>
+                    <canvas ref={this.props.strokecanvasRef} style={{width:"10vmin",height:"10vmin"}}></canvas>
+                    <input ref={this.props.colorInputRef} style={{width:"40px", height:"10vmin", border:"none"}} defaultValue={colorToString(this.props.color_selected)} type={"color"} onChange={(e)=>{this.props.changeColor(colorTo32Uint(e.target.value))}}></input>
+                </div>
         </div>
         )
     }

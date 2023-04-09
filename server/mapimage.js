@@ -7,7 +7,7 @@ const CHUNKSIZE =  16;
 const MAX_CHUNKS = 1000;
 
 function MakeImage(cxstart, cystart, cxend, cyend, readChunk, map_ver) {
-    let chunkdimn = {x:(cxend-cxstart),y:(cyend-cystart)};
+    let chunkdimn = {x:(cxend-cxstart)+1,y:(cyend-cystart)+1};
     let pixeldimn = {x:chunkdimn.x*CHUNKSIZE,y:chunkdimn.y*CHUNKSIZE};
     
     const invalids = [

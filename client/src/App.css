@@ -1,7 +1,7 @@
 :root {
   --canvas_w: 100vw;
   --canvas_h: 100vh;
-  --palette_h: 80vh;
+  --palette_h: 77vh;
   --palette_w: 10vw;
   --drawer_h: 14vh;
   --drawer_w: 96vw;
@@ -12,6 +12,7 @@
 
 * {
   margin: 0;
+  image-rendering: pixelated;
 }
 
 
@@ -51,8 +52,56 @@
   position: absolute;
 }
 
+.flex {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items:center;
+  text-align: center;
+}
+
+.infobox-wrapper {
+  width: 100vw;
+  height: 100vh;
+  background-color: #0000006d;
+  transition: 0.5s;
+}
+
+.infobox {
+  position: relative;
+  text-align: left;
+  width: 50%;
+  height: 50%;
+  background-color: #3030304f;
+  border-radius: 2vw;
+  border: 2px solid #383838;
+  padding: 25px;
+}
+
+.infotext-wrapper {
+  line-height: 130%;
+  /* max-width: 55ch; */
+}
+
+.infoclose {
+  top:5px;
+  right:5px;
+  width:50px;
+  height:50px;
+  background-color: #4e4e4e;
+  border-radius: 25px;
+  cursor: pointer;
+}
+.infoclose:hover {
+  background-color: #454444;
+}
+
+.infoclose img {
+  width: 55%;
+  height: 55%;
+}
+
 .map-canvas {
-  position: absolute;
   background-color: #e6e6e6;
   /* left: var(--margin_w); */
   left:0;
@@ -70,15 +119,20 @@
   top: var(--margin_h);
   width: var(--palette_w);
   height: var(--palette_h);
-  display: flex;
-  flex-direction: row;
-  /* align-items:center; */
-  justify-content: center;
-  flex-wrap: wrap;
+  justify-content:start;
+  gap:10px;
   border-radius: var(--global_border_radius);
-  box-sizing: border-box;
   padding:0.8vw 0.2vw 0.8vw 0.2vw;
-  gap:5px;
+}
+.palette .color-wrapper {
+  flex-direction: row;
+  flex-wrap: wrap;
+  /* align-content:end; */
+  box-sizing: border-box;
+  align-content:start;
+  /* background-color: #0025f5; */
+  gap:0px;
+  height: 60vh;
 }
 
 .drawer {
@@ -94,63 +148,64 @@
   padding: 1.5vh;
 
   gap:10px;
-  /* align-items:start; */
-  display: flex;
   flex-direction: row;
-  align-items:center;
-  /* justify-content: left; */
+  justify-content: left;
 }
 
-div .toolbutton {
-  border-radius: 40%;
-  border: 2px solid rgb(99, 99, 99);
+
+
+.toolbutton {
   transition: 0.3s;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items:center;
-  text-align: center;
-  background-color: #4a4a4a;
-  height: 8vmin;
-  width: 8vmin;
+  /* background-color: #4a4a4a; */
+  height: 10vmin;
+  width: 10vmin;
+  margin: 0 0.5vmin 0 0.5vmin;
 }
-div .toolbutton:hover,div .toolbuttonselected {
-  background-color: #4a4a4a;
-  border-radius: 50%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items:center;
-  text-align: center;
-  height: 8vmin;
-  width: 8vmin;
+.toolbutton:hover, .toolbuttonselected {
+  /* background-color: #4a4a4a; */
+  cursor: pointer;
+  height: 11vmin;
+  width: 11vmin;
+  margin: 0;
+}
+
+.toolbutton img, .toolbuttonselected img {
+  width: 100%;
+  height: 100%;
 }
 
 .blockbutton {
   cursor: pointer;
-  border-radius: 10%;
+  /* border-radius: 10%; */
   transition: 0.3s;
-  border: 2px solid #2c2c2c00;
-  height: 4vmin;
-  width: 4vmin;
+  border: 2px solid #000000;
+  height: 4.5vmin;
+  width: 4.5vmin;
+  /* margin: 0.1vmin; */
 }
-.blockbutton:hover, .blockbuttonselected {
+.blockbutton:hover {
   cursor: pointer;
   border: 2px solid white;
-  border-radius: 30%;
-  height: 4vmin;
-  width: 4vmin;
+  /* border-radius: 30%; */
+  height: 5.5vmin;
+  width: 5.5vmin;
+  margin: -0.5vmin;
+  z-index: 2;
+}
+.blockbuttonselected {
+  transition: 0.3s;
+  cursor: pointer;
+  border: 2px solid white;
+  height: 4.5vmin;
+  width: 4.5vmin;
+  z-index: 1;
 }
 
 
 .download-wrapper {
   background-color: #5c5c5cbd;
   border-radius: 10px;
-  display: flex;
   flex-wrap: wrap;
-  flex-direction: column;
-  justify-content: center;
-  text-align: center;
   padding: 5px;
 }
 .download-wrapper tr td {
@@ -178,11 +233,6 @@ div .toolbutton:hover,div .toolbuttonselected {
   width:3.5vmin;
   height:3.5vmin;
   background-color: #474747;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items:center;
-  text-align: center;
   border: 1px solid white;
   border-radius: 20%;
   margin-left: auto;
