@@ -18,8 +18,8 @@ const RANDOM_LOCATION_MAX = 1000;
 
 
 
-// const API_HOST = "https://devo.esz.us";
-const API_HOST = "http://localhost:3001";
+const API_HOST = "https://devo.esz.us";
+// const API_HOST = "http://localhost:3001";
 
 
 
