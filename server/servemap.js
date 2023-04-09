@@ -117,7 +117,7 @@ function convert(oldconnection) {
    let currenttime = Date.now();
 
 
-    const SQLQuery1 = `SELECT * FROM \`${tablename}\``;
+    const SQLQuery1 = `SELECT * FROM ${tablename}`;
 
     let initrows =  new Promise(function(resolve, reject) {
         oldconnection.query(SQLQuery1, (err, rows, fields) => {
@@ -150,7 +150,7 @@ function convert(oldconnection) {
             }
             return concatenatedString;
         })();
-        const SQLQuery2 = `REPLACE INTO \`${tablename}\` (${coords_col}, ${userip_col}, ${chunkdata_col}) VALUES ` + values;
+        const SQLQuery2 = `REPLACE INTO ${tablename} (${coords_col}, ${userip_col}, ${chunkdata_col}) VALUES ` + values;
         connection.query(SQLQuery2, (err, rows, fields) => {
             if (err) throw err;
 
@@ -162,14 +162,14 @@ function convert(oldconnection) {
 
 
 function readChunk(coordslist, ip, map_ver) {
-    const tablename = mysql.escape(map_ver);
+    const tablename = mysql.escape(map_ver).replace(/'/g,"\`");
 
     if (typeof coordslist !== 'object') return new Promise(function(resolve, reject) {reject(`\x1b[1;ERROR: got no coords. coordslist:\n${JSON.stringify(coordslist)}\x1b[0m`)});
     if (coordslist.length >= MAX_READ_CHUNKS) return new Promise(function(resolve, reject) {resolve(new Buffer.alloc(0))});
 
     let start  = Date.now();
     const generalscondition = (() => {let concatenatedString = ''; for (let i = 0; i < coordslist.length; i++) {concatenatedString += `${(i===0) ? `` : ` OR`} ${coords_col} = \"${mysql.escape(coordslist[i].x)},${mysql.escape(coordslist[i].y)}\"`;} return concatenatedString;})();
-    const SQLQuery2 = `SELECT * FROM \`${tablename}\` WHERE` + generalscondition;
+    const SQLQuery2 = `SELECT * FROM ${tablename} WHERE` + generalscondition;
     // console.log(SQLQuery2);
 
     return new Promise(function(resolve, reject) {
@@ -219,7 +219,7 @@ function readChunk(coordslist, ip, map_ver) {
 
 function writeLines(lines, userip, map_ver) {
 
-    const tablename = mysql.escape(map_ver);
+    const tablename = mysql.escape(map_ver).replace(/'/g,"\`");
 
     if (typeof lines !== 'object') return new Promise(function(resolve, reject) {resolve(false)});
     try {
@@ -309,7 +309,7 @@ function writeLines(lines, userip, map_ver) {
             concatenatedString += `${(i===0) ? `` : ` OR`} ${coords_col} = ${mysql.escape(modchunksvalues[i].coord)}`;
         } return concatenatedString;
     })();
-    const SQLQuery1 = `SELECT * FROM \`${tablename}\` WHERE` + conditions;
+    const SQLQuery1 = `SELECT * FROM ${tablename} WHERE` + conditions;
 
 
     // console.log(SQLQuery1);
@@ -334,7 +334,7 @@ function writeLines(lines, userip, map_ver) {
                 }
                 return concatenatedString;
             })();
-            const SQLQuery2 = `REPLACE INTO \`${tablename}\` (${coords_col}, ${userip_col}, ${chunkdata_col}) VALUES ` + values;
+            const SQLQuery2 = `REPLACE INTO ${tablename} (${coords_col}, ${userip_col}, ${chunkdata_col}) VALUES ` + values;
             // console.log(SQLQuery2);
 
             resolve(SQLQuery2);
