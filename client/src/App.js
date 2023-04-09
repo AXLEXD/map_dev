@@ -14,9 +14,9 @@ const DRAWTOOL = 0;
 const EYEDROPTOOL = 1;
 const MOVETOOL = 2;
 
-const RANDOM_LOCATION_MAX = 500;
+const RANDOM_LOCATION_MAX = 200;
 
-const PRODUCTION = true;
+const PRODUCTION = false;
 
 const API_HOST = (PRODUCTION) ? "https://devo.esz.us" : "http://localhost:3001";
 
@@ -902,7 +902,7 @@ class Palette extends React.Component {
                         <div 
                             key={index} 
                             style={{backgroundColor: `${color}`}} 
-                            className={`blockbutton` + (this.props.isSelected(color) ? "selected" : "")}
+                            className={`blockbutton` + ((colorToString(this.props.color_selected)===color) ? "selected" : "")}
                             onClick={() => {this.props.changeColor(colorTo32Uint(color))}}
                             //onClick={() => {console.log(button.blockid)}}
                             ></div>
