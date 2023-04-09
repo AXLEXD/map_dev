@@ -16,10 +16,9 @@ const MOVETOOL = 2;
 
 const RANDOM_LOCATION_MAX = 1000;
 
+const PRODUCTION = true;
 
-
-// const API_HOST = "https://devo.esz.us";
-const API_HOST = "http://localhost:3001";
+const API_HOST = (PRODUCTION) ? "https://devo.esz.us" : "http://localhost:3001";
 
 
 
