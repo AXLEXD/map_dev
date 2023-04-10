@@ -609,8 +609,8 @@ class MapCanvas extends React.Component {
         window.addEventListener('resize', ()=>this.resizeCanvas(this.canvas));
         setTimeout(this.updateCanvas(), UPDATEPERIOD);
 
-        let x = (Math.floor(Math.random() * RANDOM_LOCATION_MAX))*this.scale;
-        let y = (Math.floor(Math.random() * RANDOM_LOCATION_MAX))*this.scale;
+        let x = -(Math.floor(Math.random() * RANDOM_LOCATION_MAX))*this.scale;
+        let y = -(Math.floor(Math.random() * RANDOM_LOCATION_MAX))*this.scale;
         this.moveMap(this.mapoffset, new Vector2D(x,y));
     }
 
