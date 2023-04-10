@@ -14,7 +14,7 @@ const DRAWTOOL = 0;
 const EYEDROPTOOL = 1;
 const MOVETOOL = 2;
 
-const RANDOM_LOCATION_MAX = 200;
+// const RANDOM_LOCATION_MAX = 200;
 
 const PRODUCTION = true;
 
@@ -513,6 +513,7 @@ class AppWrapper extends React.Component {
                     <div className='flex' style={{flexDirection:"column", alignItems:"start"}}>
                         <div><input checked={this.state.debug_mode} type={"checkbox"} onChange={()=>{this.setState({debug_mode:!this.state.debug_mode})}}></input> Show Chunk Borders&ensp;</div>
                         <div><input checked={this.state.show_stats} type={"checkbox"} onChange={()=>{this.setState({show_stats:!this.state.show_stats})}}></input> Show Stats</div>
+                        <div className='showinfobutton' onClick={()=>this.setState({showinfobox:true})}>Show Info</div>
                     </div>
                     <table
                         className={`download-wrapper flex`}
@@ -545,7 +546,7 @@ class AppWrapper extends React.Component {
                         pointerEvents: (this.state.showinfobox) ? "all" : "none"
                     }} className='infobox-wrapper primary flex'>
                     <div className='infobox'>
-                        <div className='infoclose primary flex' onClick={(e)=>{this.setState({showinfobox:false})}}><img src='close.png' alt='close info'/></div>
+                        <div className='infoclose primary flex' onClick={()=>{this.setState({showinfobox:false})}}><img src='close.png' alt='close info'/></div>
                         <div className='infotext-wrapper'>
                             <h1 style={{lineHeight:"140%", fontSize: "180%"}}>Hi, welcome to the Pixel Art Canvas.</h1>
                             <p>This is an infinite canvas of pixels, in which you can draw anything!</p><br/>
@@ -609,9 +610,18 @@ class MapCanvas extends React.Component {
         window.addEventListener('resize', ()=>this.resizeCanvas(this.canvas));
         setTimeout(this.updateCanvas(), UPDATEPERIOD);
 
-        let x = -(Math.floor(Math.random() * RANDOM_LOCATION_MAX))*this.scale;
-        let y = -(Math.floor(Math.random() * RANDOM_LOCATION_MAX))*this.scale;
-        this.moveMap(this.mapoffset, new Vector2D(x,y));
+        fetch(`${API_HOST}/getparams`,{
+            method: 'GET',
+            headers: {'Accept': 'application/json'},
+        }).then((rawdata)=>{
+            return rawdata.json();
+        }).then((data)=>{
+            console.log( typeof data);
+            let maxoffsetradius = data.maxoffset;
+            let x = -(Math.floor(Math.random() * maxoffsetradius))*this.scale;
+            let y = -(Math.floor(Math.random() * maxoffsetradius))*this.scale;
+            this.moveMap(this.mapoffset, new Vector2D(x,y));
+        });
     }
 
     getCursorPosition(event, canvas) {

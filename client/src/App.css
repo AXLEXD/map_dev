@@ -71,8 +71,8 @@
   position: relative;
   text-align: left;
   width: 50%;
-  height: 50%;
-  background-color: #3030304f;
+  /* height: 50%; */
+  background-color: #303030db;
   border-radius: 2vw;
   border: 2px solid #383838;
   padding: 25px;
@@ -100,6 +100,19 @@
 .infoclose img {
   width: 55%;
   height: 55%;
+}
+
+.showinfobutton {
+  padding: 0 5px 0 5px;
+  transition: 0.3s;
+  border: 1px solid black;
+  margin-top: 2px;
+  background-color: rgba(87, 87, 87, 0.863);
+}
+.showinfobutton:hover {
+  cursor: pointer;
+  border-radius: 5px;
+  background-color: rgb(60, 60, 60);
 }
 
 .map-canvas {

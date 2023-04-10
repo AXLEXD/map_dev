@@ -11,6 +11,8 @@ var cors = require('cors')
 const PORT = process.env.PORT || 3001;
 const PRODUCTION = true;
 
+const MAX_OFFSET = 0;
+
 const app = express();
 
 
@@ -34,6 +36,11 @@ if (PRODUCTION) {
 app.get("/test", (req, res) => {
   console.log("connection");
   res.json({message:"hi"});
+})
+app.get("/getparams", (req, res) => {
+  var ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  console.log(`requesting params for ${ip}`);
+  res.json({maxoffset:MAX_OFFSET});
 })
 
 app.post("/getchunks", (req, res) => {
