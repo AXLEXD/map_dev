@@ -16,7 +16,7 @@ const MOVETOOL = 2;
 
 const RANDOM_LOCATION_MAX = 200;
 
-const PRODUCTION = false;
+const PRODUCTION = true;
 
 const API_HOST = (PRODUCTION) ? "https://devo.esz.us" : "http://localhost:3001";
 
@@ -555,6 +555,7 @@ class AppWrapper extends React.Component {
                                 <li style={{marginTop:"5px",color:"#DEFFDE"}}>Use the eyedrop tool to select a colour by hovering over a pixel with your desired colour and clicking. Your brush will now be set to that colour!</li>
                                 <li style={{marginTop:"5px",marginBottom:"10px",color:"#E1F6FF"}}>Use the draw tool to draw stuff. You can do this by moving the mouse while holding left click. You can also move the canvas while in draw mode by right clicking and dragging the canvas.</li>
                             </ul>
+                            <b style={{lineHeight:"190%"}}>Use the scroll wheel to zoom in or out</b>
                             <p>You can also select colours using the colour picker next to the brush display on the palette (right).</p><br/>
                             <p>If you would like to save anything you draw, you can download a PNG of your drawing by entering the range of chunks you want to download into the PNG input box. (You can view chunk coordinates on the right hand side of the toolbar - labeled 'Chunk Coords', and you can view chunk borders by enabling 'Show Chunk Borders')</p>
                         </div>
@@ -608,8 +609,8 @@ class MapCanvas extends React.Component {
         window.addEventListener('resize', ()=>this.resizeCanvas(this.canvas));
         setTimeout(this.updateCanvas(), UPDATEPERIOD);
 
-        let x = (Math.floor(Math.random() * RANDOM_LOCATION_MAX*2 - RANDOM_LOCATION_MAX))*this.scale;
-        let y = (Math.floor(Math.random() * RANDOM_LOCATION_MAX*2 - RANDOM_LOCATION_MAX))*this.scale;
+        let x = (Math.floor(Math.random() * RANDOM_LOCATION_MAX))*this.scale;
+        let y = (Math.floor(Math.random() * RANDOM_LOCATION_MAX))*this.scale;
         this.moveMap(this.mapoffset, new Vector2D(x,y));
     }
 

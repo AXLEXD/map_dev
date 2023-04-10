@@ -9,7 +9,7 @@ var cors = require('cors')
 
 
 const PORT = process.env.PORT || 3001;
-const PRODUCTION = false;
+const PRODUCTION = true;
 
 const app = express();
 
