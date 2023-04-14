@@ -2,7 +2,7 @@
 
 This is an infinite Pixel Canvas where anyone can draw anything. There is a persistant instance running from the server using MySQL, and the frontend React website communicates to it through a NodeJS backend, hosted on the same server.
 
-Link to the page in action here: [Pixel Canvas](http://devo.esz.us).
+Link to the page in action here: [Pixel Canvas](https://pixel-canvas.github.io/).
 
 **TODO**
 - [x] Encapsulate all line draws into a single call that is sent to the server on the update tick
