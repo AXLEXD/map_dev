@@ -1,4 +1,4 @@
-# B
+# Pixel Canvas
 
 This is an infinite Pixel Canvas where anyone can draw anything. There is a persistant instance running from the server using MySQL, and the frontend React website communicates to it through a NodeJS backend, hosted on the same server.
 
